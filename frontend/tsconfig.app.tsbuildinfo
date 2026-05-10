@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/api/documents.ts","./src/components/documents/documentcard.tsx","./src/components/documents/uploadmodal.tsx","./src/components/editors/wopieditor.tsx","./src/components/layout/layout.tsx","./src/pages/editorpage.tsx","./src/pages/homepage.tsx","./src/types/index.ts"],"version":"5.9.3"}

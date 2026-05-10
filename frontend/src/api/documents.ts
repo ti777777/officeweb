@@ -1,0 +1,29 @@
+import { api } from './index'
+import type { Document, WopiTokenInfo } from '../types'
+
+export const documentsApi = {
+  list: () => api.get<Document[]>('/api/documents').then(r => r.data),
+
+  get: (id: string) => api.get<Document>(`/api/documents/${id}`).then(r => r.data),
+
+  upload: (file: File, onProgress?: (pct: number) => void) => {
+    const form = new FormData()
+    form.append('file', file)
+    return api.post<Document>('/api/documents', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: e => {
+        if (onProgress && e.total) onProgress(Math.round((e.loaded / e.total) * 100))
+      },
+    }).then(r => r.data)
+  },
+
+  delete: (id: string) => api.delete(`/api/documents/${id}`),
+
+  downloadUrl: (id: string) => `${import.meta.env.VITE_API_URL ?? ''}/api/documents/${id}/download`,
+
+  getWopiToken: (id: string) =>
+    api.get<WopiTokenInfo>(`/api/documents/${id}/wopi-token`).then(r => r.data),
+
+  getWopiActionUrl: (ext: string) =>
+    api.get<{ url: string }>('/api/editors/action', { params: { ext } }).then(r => r.data),
+}
