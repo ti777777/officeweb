@@ -10,4 +10,8 @@ public class Document
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     public required string StoragePath { get; set; }
+    public Guid? WorkspaceId { get; set; }
+    public Workspace? Workspace { get; set; }
+    public Guid? OwnerId { get; set; }
+    public User? Owner { get; set; }
 }

@@ -1,14 +1,17 @@
-import { FileText, FileSpreadsheet, Presentation, Download, Trash2, Edit2 } from 'lucide-react'
+import { FileText, FileSpreadsheet, Presentation, Download, Trash2, Edit2, Eye } from 'lucide-react'
 import type { Document } from '../../types'
 
 interface Props {
   doc: Document
   onDelete: (id: string) => void
   onEdit: (id: string) => void
+  onPreview?: (id: string) => void
   downloadUrl: string
 }
 
 function fileIcon(contentType: string) {
+  if (contentType === 'application/pdf')
+    return <FileText className="w-8 h-8 text-red-500" />
   if (contentType.includes('spreadsheet') || contentType.includes('excel'))
     return <FileSpreadsheet className="w-8 h-8 text-green-500" />
   if (contentType.includes('presentation') || contentType.includes('powerpoint'))
@@ -26,7 +29,9 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' })
 }
 
-export default function DocumentCard({ doc, onDelete, onEdit, downloadUrl }: Props) {
+const isPdf = (contentType: string) => contentType === 'application/pdf'
+
+export default function DocumentCard({ doc, onDelete, onEdit, onPreview, downloadUrl }: Props) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow p-4 flex flex-col gap-3">
       <div className="flex items-start gap-3">
@@ -42,13 +47,23 @@ export default function DocumentCard({ doc, onDelete, onEdit, downloadUrl }: Pro
       </div>
 
       <div className="flex items-center gap-2 pt-1 border-t border-gray-100">
-        <button
-          onClick={() => onEdit(doc.id)}
-          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 transition-colors"
-        >
-          <Edit2 className="w-3.5 h-3.5" />
-          Edit
-        </button>
+        {isPdf(doc.contentType) ? (
+          <button
+            onClick={() => onPreview?.(doc.id)}
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors"
+          >
+            <Eye className="w-3.5 h-3.5" />
+            Preview
+          </button>
+        ) : (
+          <button
+            onClick={() => onEdit(doc.id)}
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 transition-colors"
+          >
+            <Edit2 className="w-3.5 h-3.5" />
+            Edit
+          </button>
+        )}
 
         <a
           href={downloadUrl}

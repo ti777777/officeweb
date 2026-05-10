@@ -28,3 +28,19 @@ export interface AuthResponse {
   user: AuthUser
 }
 
+export interface WorkspaceMember {
+  userId: string
+  username: string
+  email: string
+  role: 'Owner' | 'Member'
+  joinedAt: string
+}
+
+export interface Workspace {
+  id: string
+  name: string
+  description: string | null
+  createdAt: string
+  members: WorkspaceMember[]
+}
+

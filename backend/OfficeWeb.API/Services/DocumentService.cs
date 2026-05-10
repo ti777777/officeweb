@@ -57,6 +57,37 @@ public class DocumentService(AppDbContext db, IConfiguration config) : IDocument
         return (File.OpenRead(doc.StoragePath), doc);
     }
 
+    public async Task<Document> UploadAsync(IFormFile file, Guid workspaceId, Guid ownerId)
+    {
+        var id = Guid.NewGuid();
+        var ext = Path.GetExtension(file.FileName);
+        var storagePath = Path.Combine(_uploadPath, $"{id}{ext}");
+
+        await using var fs = File.Create(storagePath);
+        await file.CopyToAsync(fs);
+
+        var doc = new Document
+        {
+            Id = id,
+            FileName = file.FileName,
+            ContentType = file.ContentType,
+            Size = file.Length,
+            StoragePath = storagePath,
+            WorkspaceId = workspaceId,
+            OwnerId = ownerId,
+        };
+
+        db.Documents.Add(doc);
+        await db.SaveChangesAsync();
+        return doc;
+    }
+
+    public async Task<IEnumerable<Document>> GetByWorkspaceAsync(Guid workspaceId) =>
+        await db.Documents
+            .Where(d => d.WorkspaceId == workspaceId)
+            .OrderByDescending(d => d.UpdatedAt)
+            .ToListAsync();
+
     public async Task UpdateFileAsync(Guid id, Stream content)
     {
         var doc = await db.Documents.FindAsync(id);

@@ -7,7 +7,9 @@ using OfficeWeb.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(o =>
+        o.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -35,6 +37,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddScoped<IDocumentService, DocumentService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IWorkspaceService, WorkspaceService>();
 builder.Services.AddSingleton<IWopiTokenService, WopiTokenService>();
 builder.Services.AddHttpClient();
 
@@ -44,6 +47,7 @@ var jwtKey = builder.Configuration["Jwt:Key"]
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        options.MapInboundClaims = false;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -86,6 +90,27 @@ using (var scope = app.Services.CreateScope())
         CREATE UNIQUE INDEX IF NOT EXISTS "IX_Users_Email"     ON "Users" ("Email");
         CREATE UNIQUE INDEX IF NOT EXISTS "IX_Users_Username"  ON "Users" ("Username");
         """);
+
+    // Idempotent: add Workspace tables when upgrading an existing database.
+    db.Database.ExecuteSqlRaw("""
+        CREATE TABLE IF NOT EXISTS "Workspaces" (
+            "Id"          TEXT NOT NULL CONSTRAINT "PK_Workspaces" PRIMARY KEY,
+            "Name"        TEXT NOT NULL,
+            "Description" TEXT,
+            "CreatedAt"   TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS "WorkspaceUsers" (
+            "WorkspaceId" TEXT NOT NULL,
+            "UserId"      TEXT NOT NULL,
+            "Role"        TEXT NOT NULL DEFAULT 'Member',
+            "JoinedAt"    TEXT NOT NULL,
+            CONSTRAINT "PK_WorkspaceUsers" PRIMARY KEY ("WorkspaceId", "UserId")
+        );
+        """);
+
+    // Idempotent: add new columns to Documents (SQLite has no ADD COLUMN IF NOT EXISTS).
+    try { db.Database.ExecuteSqlRaw("ALTER TABLE \"Documents\" ADD COLUMN \"WorkspaceId\" TEXT"); } catch { }
+    try { db.Database.ExecuteSqlRaw("ALTER TABLE \"Documents\" ADD COLUMN \"OwnerId\" TEXT"); } catch { }
 }
 
 if (app.Environment.IsDevelopment())

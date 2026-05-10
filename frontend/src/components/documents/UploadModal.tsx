@@ -1,15 +1,16 @@
 import { useState, useCallback } from 'react'
 import { Upload, X, File } from 'lucide-react'
 import clsx from 'clsx'
-import { documentsApi } from '../../api/documents'
 import type { Document } from '../../types'
 
 interface Props {
   onClose: () => void
   onUploaded: (doc: Document) => void
+  uploadFn: (file: File, onProgress: (pct: number) => void) => Promise<Document>
 }
 
 const ACCEPTED = [
+  'application/pdf',
   'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/vnd.ms-excel',
@@ -22,7 +23,7 @@ const ACCEPTED = [
   'text/plain',
 ].join(',')
 
-export default function UploadModal({ onClose, onUploaded }: Props) {
+export default function UploadModal({ onClose, onUploaded, uploadFn }: Props) {
   const [file, setFile] = useState<File | null>(null)
   const [progress, setProgress] = useState(0)
   const [uploading, setUploading] = useState(false)
@@ -42,7 +43,7 @@ export default function UploadModal({ onClose, onUploaded }: Props) {
     setUploading(true)
     setProgress(0)
     try {
-      const doc = await documentsApi.upload(file, pct => setProgress(pct))
+      const doc = await uploadFn(file, pct => setProgress(pct))
       onUploaded(doc)
     } finally {
       setUploading(false)
@@ -73,7 +74,7 @@ export default function UploadModal({ onClose, onUploaded }: Props) {
             <Upload className={clsx('w-10 h-10', dragOver ? 'text-primary-500' : 'text-gray-400')} />
             <div className="text-center">
               <p className="text-sm font-medium text-gray-700">Drag &amp; drop a file here or click to select</p>
-              <p className="text-xs text-gray-500 mt-1">Supports Word, Excel, PowerPoint, ODF, TXT (max 100 MB)</p>
+              <p className="text-xs text-gray-500 mt-1">Supports PDF, Word, Excel, PowerPoint, ODF, TXT (max 100 MB)</p>
             </div>
             <input
               id="file-input"

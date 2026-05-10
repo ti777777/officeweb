@@ -21,6 +21,10 @@ export const documentsApi = {
 
   downloadUrl: (id: string) => `${import.meta.env.VITE_API_URL ?? ''}/api/documents/${id}/download`,
 
+  getBlob: (id: string) =>
+    api.get(`/api/documents/${id}/download`, { responseType: 'blob' })
+      .then(r => r.data as Blob),
+
   getWopiToken: (id: string) =>
     api.get<WopiTokenInfo>(`/api/documents/${id}/wopi-token`).then(r => r.data),
 

@@ -4,7 +4,9 @@ import { AuthProvider } from './contexts/AuthContext'
 import Layout from './components/layout/Layout'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import HomePage from './pages/HomePage'
+import WorkspacePage from './pages/WorkspacePage'
 import EditorPage from './pages/EditorPage'
+import PdfPreviewPage from './pages/PdfPreviewPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 
@@ -19,8 +21,10 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
               <Route path="/" element={<HomePage />} />
+              <Route path="/workspaces/:id" element={<WorkspacePage />} />
             </Route>
             <Route path="/editor/:id" element={<EditorPage />} />
+            <Route path="/pdf/:id" element={<PdfPreviewPage />} />
           </Route>
         </Routes>
       </BrowserRouter>
