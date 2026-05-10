@@ -13,9 +13,6 @@ export default function Layout() {
             <FileText className="w-7 h-7" />
             <span className="text-xl font-bold text-gray-900">OfficeWeb</span>
           </div>
-          <span className="text-xs font-medium bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full ml-1">
-            WOPI
-          </span>
 
           <div className="ml-auto flex items-center gap-3">
             {user && (
