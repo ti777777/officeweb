@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import {
   ArrowLeft, Check, ChevronRight, Folder as FolderIcon, FolderPlus,
@@ -392,17 +392,29 @@ function MoveDocumentDialog({ doc, folders, open, onClose, onMoved }: {
 export default function WorkspacePage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { user } = useAuth()
   const [workspace, setWorkspace] = useState<Workspace | null>(null)
   const [documents, setDocuments] = useState<Document[]>([])
   const [folders, setFolders] = useState<Folder[]>([])
-  const [activeFolder, setActiveFolder] = useState<Folder | null>(null)
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [showUpload, setShowUpload] = useState(false)
   const [showMembers, setShowMembers] = useState(false)
   const [showCreateFolder, setShowCreateFolder] = useState(false)
   const [moveDoc, setMoveDoc] = useState<Document | null>(null)
+
+  const activeFolderId = searchParams.get('folder') ?? null
+  const activeFolder = activeFolderId ? (folders.find(f => f.id === activeFolderId) ?? null) : null
+
+  const openFolder = (folder: Folder) => {
+    setSearch('')
+    setSearchParams({ folder: folder.id }, { replace: false })
+  }
+  const closeFolder = () => {
+    setSearch('')
+    setSearchParams({}, { replace: false })
+  }
 
   const fetchData = useCallback(async () => {
     if (!id) return
@@ -450,7 +462,7 @@ export default function WorkspacePage() {
       await foldersApi.delete(id!, folder.id)
       setFolders(prev => prev.filter(f => f.id !== folder.id))
       setDocuments(prev => prev.map(d => d.folderId === folder.id ? { ...d, folderId: null } : d))
-      if (activeFolder?.id === folder.id) setActiveFolder(null)
+      if (activeFolder?.id === folder.id) closeFolder()
       toast.success('Folder deleted')
     } catch {
       toast.error('Failed to delete folder')
@@ -461,7 +473,6 @@ export default function WorkspacePage() {
     try {
       await foldersApi.rename(id!, folder.id, name)
       setFolders(prev => prev.map(f => f.id === folder.id ? { ...f, name } : f))
-      if (activeFolder?.id === folder.id) setActiveFolder(prev => prev ? { ...prev, name } : prev)
       toast.success('Folder renamed')
     } catch {
       toast.error('Rename failed')
@@ -559,7 +570,7 @@ export default function WorkspacePage() {
       {activeFolder && (
         <div className="flex items-center gap-1.5 text-sm">
           <button
-            onClick={() => { setActiveFolder(null); setSearch('') }}
+            onClick={closeFolder}
             className="text-primary hover:underline underline-offset-4 font-medium transition-colors"
           >
             {workspace.name}
@@ -604,7 +615,7 @@ export default function WorkspacePage() {
             <FolderCard
               key={folder.id}
               folder={folder}
-              onOpen={() => { setActiveFolder(folder); setSearch('') }}
+              onOpen={() => openFolder(folder)}
               onDelete={() => void handleDeleteFolder(folder)}
               onRename={name => handleRenameFolder(folder, name)}
             />
