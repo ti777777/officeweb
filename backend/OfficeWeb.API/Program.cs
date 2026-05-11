@@ -112,14 +112,18 @@ using (var scope = app.Services.CreateScope())
     // Idempotent: add Folders table when upgrading an existing database.
     db.Database.ExecuteSqlRaw("""
         CREATE TABLE IF NOT EXISTS "Folders" (
-            "Id"          TEXT NOT NULL CONSTRAINT "PK_Folders" PRIMARY KEY,
-            "Name"        TEXT NOT NULL,
-            "CreatedAt"   TEXT NOT NULL,
-            "WorkspaceId" TEXT NOT NULL,
+            "Id"             TEXT NOT NULL CONSTRAINT "PK_Folders" PRIMARY KEY,
+            "Name"           TEXT NOT NULL,
+            "CreatedAt"      TEXT NOT NULL,
+            "WorkspaceId"    TEXT NOT NULL,
+            "ParentFolderId" TEXT NULL,
             CONSTRAINT "FK_Folders_Workspaces_WorkspaceId" FOREIGN KEY ("WorkspaceId") REFERENCES "Workspaces" ("Id") ON DELETE CASCADE
         );
-        CREATE INDEX IF NOT EXISTS "IX_Folders_WorkspaceId" ON "Folders" ("WorkspaceId");
+        CREATE INDEX IF NOT EXISTS "IX_Folders_WorkspaceId"    ON "Folders" ("WorkspaceId");
+        CREATE INDEX IF NOT EXISTS "IX_Folders_ParentFolderId" ON "Folders" ("ParentFolderId");
         """);
+    // Idempotent: add ParentFolderId to existing Folders table.
+    try { db.Database.ExecuteSqlRaw("ALTER TABLE \"Folders\" ADD COLUMN \"ParentFolderId\" TEXT"); } catch { }
 
     // Idempotent: add new columns to Documents (SQLite has no ADD COLUMN IF NOT EXISTS).
     try { db.Database.ExecuteSqlRaw("ALTER TABLE \"Documents\" ADD COLUMN \"WorkspaceId\" TEXT"); } catch { }

@@ -156,11 +156,12 @@ function FolderCard({ folder, onOpen, onDelete, onRename }: {
   )
 }
 
-function CreateFolderDialog({ open, onClose, onCreated, workspaceId }: {
+function CreateFolderDialog({ open, onClose, onCreated, workspaceId, parentFolderId }: {
   open: boolean
   onClose: () => void
   onCreated: () => void
   workspaceId: string
+  parentFolderId?: string | null
 }) {
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
@@ -170,7 +171,7 @@ function CreateFolderDialog({ open, onClose, onCreated, workspaceId }: {
     if (!name.trim()) return
     setLoading(true)
     try {
-      await foldersApi.create(workspaceId, name.trim())
+      await foldersApi.create(workspaceId, name.trim(), parentFolderId)
       toast.success('Folder created')
       setName('')
       onCreated()
@@ -458,12 +459,17 @@ export default function WorkspacePage() {
   }
 
   const handleDeleteFolder = async (folder: Folder) => {
-    if (!confirm(`Delete folder "${folder.name}"? Documents inside will be moved to the workspace root.`)) return
+    if (!confirm(`Delete folder "${folder.name}"? All subfolders and documents inside will be deleted or moved to the workspace root.`)) return
     try {
       await foldersApi.delete(id!, folder.id)
-      setFolders(prev => prev.filter(f => f.id !== folder.id))
-      setDocuments(prev => prev.map(d => d.folderId === folder.id ? { ...d, folderId: null } : d))
-      if (activeFolder?.id === folder.id) closeFolder()
+      const getAllDescendantIds = (folderId: string, all: Folder[]): string[] => {
+        const children = all.filter(f => f.parentFolderId === folderId)
+        return [folderId, ...children.flatMap(c => getAllDescendantIds(c.id, all))]
+      }
+      const deletedIds = new Set(getAllDescendantIds(folder.id, folders))
+      setFolders(prev => prev.filter(f => !deletedIds.has(f.id)))
+      setDocuments(prev => prev.map(d => deletedIds.has(d.folderId ?? '') ? { ...d, folderId: null } : d))
+      if (activeFolder && deletedIds.has(activeFolder.id)) closeFolder()
       toast.success('Folder deleted')
     } catch {
       toast.error('Failed to delete folder')
@@ -488,13 +494,24 @@ export default function WorkspacePage() {
   }
 
   const currentFolderId = activeFolder?.id ?? null
-  const filteredFolders = activeFolder
-    ? []
-    : folders.filter(f => f.name.toLowerCase().includes(search.toLowerCase()))
+  const filteredFolders = folders
+    .filter(f => (f.parentFolderId ?? null) === currentFolderId)
+    .filter(f => f.name.toLowerCase().includes(search.toLowerCase()))
   const filteredDocuments = documents
     .filter(d => d.folderId === currentFolderId)
     .filter(d => d.fileName.toLowerCase().includes(search.toLowerCase()))
   const isEmpty = filteredFolders.length === 0 && filteredDocuments.length === 0
+
+  const folderBreadcrumb = (() => {
+    if (!activeFolder) return []
+    const path: Folder[] = []
+    let current: Folder | undefined = activeFolder
+    while (current) {
+      path.unshift(current)
+      current = current.parentFolderId ? folders.find(f => f.id === current!.parentFolderId) : undefined
+    }
+    return path
+  })()
 
   const uploadFn = activeFolder && id
     ? (file: File, onProgress: (pct: number) => void) =>
@@ -569,15 +586,28 @@ export default function WorkspacePage() {
       </div>
 
       {activeFolder && (
-        <div className="flex items-center gap-1.5 text-sm">
+        <div className="flex items-center gap-1.5 text-sm flex-wrap">
           <button
             onClick={closeFolder}
             className="text-primary hover:underline underline-offset-4 font-medium transition-colors"
           >
             {workspace.name}
           </button>
-          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
-          <span className="font-medium">{activeFolder.name}</span>
+          {folderBreadcrumb.map((f, i) => (
+            <span key={f.id} className="flex items-center gap-1.5">
+              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+              {i < folderBreadcrumb.length - 1 ? (
+                <button
+                  onClick={() => openFolder(f)}
+                  className="text-primary hover:underline underline-offset-4 font-medium transition-colors"
+                >
+                  {f.name}
+                </button>
+              ) : (
+                <span className="font-medium">{f.name}</span>
+              )}
+            </span>
+          ))}
         </div>
       )}
 
@@ -638,6 +668,7 @@ export default function WorkspacePage() {
         <CreateFolderDialog
           open={showCreateFolder}
           workspaceId={id}
+          parentFolderId={activeFolder?.id}
           onClose={() => setShowCreateFolder(false)}
           onCreated={() => void handleFolderCreated()}
         />

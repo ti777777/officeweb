@@ -14,7 +14,7 @@ public class FoldersController(IWorkspaceService workspaces, IFolderService fold
     private Guid CurrentUserId =>
         Guid.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
 
-    public record CreateFolderRequest(string Name);
+    public record CreateFolderRequest(string Name, Guid? ParentFolderId);
     public record RenameFolderRequest(string Name);
 
     [HttpGet]
@@ -22,7 +22,7 @@ public class FoldersController(IWorkspaceService workspaces, IFolderService fold
     {
         if (await workspaces.GetByIdAsync(workspaceId, CurrentUserId) is null) return NotFound();
         var list = await folders.GetByWorkspaceAsync(workspaceId);
-        return Ok(list.Select(f => new { f.Id, f.Name, f.WorkspaceId, f.CreatedAt }));
+        return Ok(list.Select(f => new { f.Id, f.Name, f.WorkspaceId, f.ParentFolderId, f.CreatedAt }));
     }
 
     [HttpPost]
@@ -31,9 +31,11 @@ public class FoldersController(IWorkspaceService workspaces, IFolderService fold
         if (string.IsNullOrWhiteSpace(req.Name))
             return BadRequest(new { error = "Folder name is required." });
         if (await workspaces.GetByIdAsync(workspaceId, CurrentUserId) is null) return NotFound();
-        var folder = await folders.CreateAsync(req.Name, workspaceId);
+        if (req.ParentFolderId is not null && await folders.GetByIdAsync(req.ParentFolderId.Value, workspaceId) is null)
+            return NotFound();
+        var folder = await folders.CreateAsync(req.Name, workspaceId, req.ParentFolderId);
         return Created($"/api/workspaces/{workspaceId}/folders/{folder.Id}",
-            new { folder.Id, folder.Name, folder.WorkspaceId, folder.CreatedAt });
+            new { folder.Id, folder.Name, folder.WorkspaceId, folder.ParentFolderId, folder.CreatedAt });
     }
 
     [HttpPut("{folderId:guid}")]
@@ -43,7 +45,7 @@ public class FoldersController(IWorkspaceService workspaces, IFolderService fold
             return BadRequest(new { error = "Folder name is required." });
         if (await workspaces.GetByIdAsync(workspaceId, CurrentUserId) is null) return NotFound();
         var folder = await folders.RenameAsync(folderId, workspaceId, req.Name);
-        return folder is null ? NotFound() : Ok(new { folder.Id, folder.Name, folder.WorkspaceId, folder.CreatedAt });
+        return folder is null ? NotFound() : Ok(new { folder.Id, folder.Name, folder.WorkspaceId, folder.ParentFolderId, folder.CreatedAt });
     }
 
     [HttpDelete("{folderId:guid}")]

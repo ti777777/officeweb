@@ -35,6 +35,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasForeignKey(f => f.WorkspaceId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        modelBuilder.Entity<Folder>()
+            .HasOne(f => f.ParentFolder)
+            .WithMany(f => f.SubFolders)
+            .HasForeignKey(f => f.ParentFolderId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
         modelBuilder.Entity<Document>()
             .HasOne(d => d.Workspace)
             .WithMany(w => w.Documents)

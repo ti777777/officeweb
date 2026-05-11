@@ -5,8 +5,8 @@ export const foldersApi = {
   list: (workspaceId: string) =>
     api.get<Folder[]>(`/api/workspaces/${workspaceId}/folders`).then(r => r.data),
 
-  create: (workspaceId: string, name: string) =>
-    api.post<Folder>(`/api/workspaces/${workspaceId}/folders`, { name }).then(r => r.data),
+  create: (workspaceId: string, name: string, parentFolderId?: string | null) =>
+    api.post<Folder>(`/api/workspaces/${workspaceId}/folders`, { name, parentFolderId: parentFolderId ?? null }).then(r => r.data),
 
   rename: (workspaceId: string, folderId: string, name: string) =>
     api.put<Folder>(`/api/workspaces/${workspaceId}/folders/${folderId}`, { name }).then(r => r.data),

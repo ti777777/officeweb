@@ -7,5 +7,8 @@ public class Folder
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public Guid WorkspaceId { get; set; }
     public Workspace Workspace { get; set; } = null!;
+    public Guid? ParentFolderId { get; set; }
+    public Folder? ParentFolder { get; set; }
+    public ICollection<Folder> SubFolders { get; set; } = [];
     public ICollection<Document> Documents { get; set; } = [];
 }

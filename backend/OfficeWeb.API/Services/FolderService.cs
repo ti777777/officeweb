@@ -15,9 +15,9 @@ public class FolderService(AppDbContext db) : IFolderService
     public async Task<Folder?> GetByIdAsync(Guid folderId, Guid workspaceId) =>
         await db.Folders.FirstOrDefaultAsync(f => f.Id == folderId && f.WorkspaceId == workspaceId);
 
-    public async Task<Folder> CreateAsync(string name, Guid workspaceId)
+    public async Task<Folder> CreateAsync(string name, Guid workspaceId, Guid? parentFolderId = null)
     {
-        var folder = new Folder { Name = name, WorkspaceId = workspaceId };
+        var folder = new Folder { Name = name, WorkspaceId = workspaceId, ParentFolderId = parentFolderId };
         db.Folders.Add(folder);
         await db.SaveChangesAsync();
         return folder;
@@ -38,10 +38,21 @@ public class FolderService(AppDbContext db) : IFolderService
             .Include(f => f.Documents)
             .FirstOrDefaultAsync(f => f.Id == folderId && f.WorkspaceId == workspaceId);
         if (folder is null) return false;
+        await DeleteRecursiveAsync(folder);
+        await db.SaveChangesAsync();
+        return true;
+    }
+
+    private async Task DeleteRecursiveAsync(Folder folder)
+    {
+        var subFolders = await db.Folders
+            .Include(f => f.Documents)
+            .Where(f => f.ParentFolderId == folder.Id)
+            .ToListAsync();
+        foreach (var sub in subFolders)
+            await DeleteRecursiveAsync(sub);
         foreach (var doc in folder.Documents)
             doc.FolderId = null;
         db.Folders.Remove(folder);
-        await db.SaveChangesAsync();
-        return true;
     }
 }
