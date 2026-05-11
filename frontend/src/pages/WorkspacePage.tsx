@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import {
   ArrowLeft, Check, ChevronRight, Folder as FolderIcon, FolderPlus,
-  Pencil, Plus, RefreshCw, Search, Trash2, Users, FileText, X, UserMinus, Home,
+  MoreHorizontal, Pencil, Plus, RefreshCw, Search, Trash2, Users, FileText, X, UserMinus, Home,
 } from 'lucide-react'
 import { workspacesApi } from '@/api/workspaces'
 import { documentsApi } from '@/api/documents'
@@ -27,6 +27,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 function FolderCard({ folder, onOpen, onDelete, onRename }: {
   folder: Folder
@@ -64,7 +71,7 @@ function FolderCard({ folder, onOpen, onDelete, onRename }: {
     <div
       onClick={editing ? undefined : onOpen}
       className={cn(
-        'group bg-card border rounded-lg p-4 flex flex-col gap-3 cursor-pointer',
+        'group bg-card border rounded-lg p-4 flex flex-col gap-2 cursor-pointer',
         'hover:border-primary/40 hover:shadow-sm transition-all duration-150',
         editing && 'border-primary/40',
       )}
@@ -96,11 +103,9 @@ function FolderCard({ folder, onOpen, onDelete, onRename }: {
             </p>
           )}
         </div>
-      </div>
 
-      <div className="flex items-center gap-1 pt-1 border-t">
         {editing ? (
-          <>
+          <div className="flex items-center gap-1 shrink-0">
             <button
               onClick={e => { e.stopPropagation(); void handleSave() }}
               disabled={saving || !editName.trim()}
@@ -117,23 +122,35 @@ function FolderCard({ folder, onOpen, onDelete, onRename }: {
             >
               <X className="w-3.5 h-3.5" />
             </button>
-          </>
+          </div>
         ) : (
-          <button
-            onClick={e => { e.stopPropagation(); setEditing(true) }}
-            className="p-1.5 rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-primary hover:bg-accent transition-all"
-            title="Rename folder"
-          >
-            <Pencil className="w-3.5 h-3.5" />
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={e => e.stopPropagation()}
+              >
+                <MoreHorizontal className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem onClick={e => { e.stopPropagation(); setEditing(true) }}>
+                <Pencil className="w-4 h-4 mr-2" />
+                Rename
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={e => { e.stopPropagation(); onDelete() }}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
-        <button
-          onClick={e => { e.stopPropagation(); onDelete() }}
-          className="ml-auto p-1.5 rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive hover:bg-destructive/10 transition-all"
-          title="Delete folder"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
       </div>
     </div>
   )

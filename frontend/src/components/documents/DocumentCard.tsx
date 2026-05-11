@@ -1,8 +1,14 @@
-import { FileText, FileSpreadsheet, Presentation, Download, Trash2, Edit2, Eye, FolderInput } from 'lucide-react'
+import { FileText, FileSpreadsheet, Presentation, Download, Trash2, Edit2, Eye, FolderInput, MoreHorizontal } from 'lucide-react'
 import type { Document } from '@/types'
 import { cn } from '@/lib/utils'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
 interface Props {
   doc: Document
@@ -23,10 +29,10 @@ function getKind(contentType: string): FileKind {
 }
 
 const kindMeta: Record<FileKind, { icon: React.ReactNode; accent: string; label: string }> = {
-  pdf:   { icon: <FileText className="w-5 h-5" />,         accent: 'text-red-500 bg-red-50',     label: 'PDF' },
+  pdf:   { icon: <FileText className="w-5 h-5" />,         accent: 'text-red-500 bg-red-50',         label: 'PDF' },
   sheet: { icon: <FileSpreadsheet className="w-5 h-5" />,  accent: 'text-emerald-600 bg-emerald-50', label: 'Spreadsheet' },
-  slide: { icon: <Presentation className="w-5 h-5" />,     accent: 'text-amber-600 bg-amber-50', label: 'Presentation' },
-  doc:   { icon: <FileText className="w-5 h-5" />,         accent: 'text-primary bg-accent',     label: 'Document' },
+  slide: { icon: <Presentation className="w-5 h-5" />,     accent: 'text-amber-600 bg-amber-50',     label: 'Presentation' },
+  doc:   { icon: <FileText className="w-5 h-5" />,         accent: 'text-primary bg-accent',         label: 'Document' },
 }
 
 function formatBytes(bytes: number) {
@@ -58,68 +64,52 @@ export default function DocumentCard({ doc, onDelete, onEdit, onPreview, onMove,
             {formatBytes(doc.size)} · {formatDate(doc.updatedAt)}
           </p>
         </div>
-      </div>
 
-      <div className="flex items-center gap-1.5 pt-1 border-t">
-        {isPdf ? (
-          <Button
-            size="sm"
-            variant="secondary"
-            className="flex-1 h-7 text-xs"
-            onClick={() => onPreview?.(doc.id)}
-          >
-            <Eye className="w-3.5 h-3.5" />
-            Preview
-          </Button>
-        ) : (
-          <Button
-            size="sm"
-            className="flex-1 h-7 text-xs"
-            onClick={() => onEdit(doc.id)}
-          >
-            <Edit2 className="w-3.5 h-3.5" />
-            Edit
-          </Button>
-        )}
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <a
-              href={downloadUrl}
-              download={doc.fileName}
-              className="inline-flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={e => e.stopPropagation()}
             >
-              <Download className="w-3.5 h-3.5" />
-            </a>
-          </TooltipTrigger>
-          <TooltipContent>Download</TooltipContent>
-        </Tooltip>
-
-        {onMove && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => onMove(doc)}
-                className="inline-flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-              >
-                <FolderInput className="w-3.5 h-3.5" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>Move to folder</TooltipContent>
-          </Tooltip>
-        )}
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
+              <MoreHorizontal className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            {isPdf ? (
+              <DropdownMenuItem onClick={() => onPreview?.(doc.id)}>
+                <Eye className="w-4 h-4 mr-2" />
+                Preview
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem onClick={() => onEdit(doc.id)}>
+                <Edit2 className="w-4 h-4 mr-2" />
+                Edit
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem asChild>
+              <a href={downloadUrl} download={doc.fileName} className="flex items-center">
+                <Download className="w-4 h-4 mr-2" />
+                Download
+              </a>
+            </DropdownMenuItem>
+            {onMove && (
+              <DropdownMenuItem onClick={() => onMove(doc)}>
+                <FolderInput className="w-4 h-4 mr-2" />
+                Move to folder
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
               onClick={() => onDelete(doc.id)}
-              className="inline-flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+              className="text-destructive focus:text-destructive"
             >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent>Delete</TooltipContent>
-        </Tooltip>
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   )
