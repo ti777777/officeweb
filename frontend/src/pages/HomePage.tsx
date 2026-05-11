@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { Plus, RefreshCw, Folder, X } from 'lucide-react'
@@ -29,7 +30,7 @@ function CreateWorkspaceModal({ onClose, onCreated }: {
     }
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
@@ -80,7 +81,8 @@ function CreateWorkspaceModal({ onClose, onCreated }: {
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
@@ -120,6 +122,17 @@ export default function HomePage() {
       toast.success('Workspace deleted')
     } catch {
       toast.error('Delete failed')
+    }
+  }
+
+  const handleRename = async (id: string, name: string) => {
+    try {
+      const updated = await workspacesApi.rename(id, name)
+      setWorkspaces(prev => prev.map(w => w.id === id ? { ...w, name: updated.name } : w))
+      toast.success('Workspace renamed')
+    } catch {
+      toast.error('Rename failed')
+      throw new Error('rename failed')
     }
   }
 
@@ -184,6 +197,7 @@ export default function HomePage() {
               currentUserId={user?.id ?? ''}
               onClick={() => navigate(`/workspaces/${ws.id}`)}
               onDelete={handleDelete}
+              onRename={handleRename}
             />
           ))}
         </div>

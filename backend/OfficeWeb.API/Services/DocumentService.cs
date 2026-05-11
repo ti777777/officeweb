@@ -57,7 +57,7 @@ public class DocumentService(AppDbContext db, IConfiguration config) : IDocument
         return (File.OpenRead(doc.StoragePath), doc);
     }
 
-    public async Task<Document> UploadAsync(IFormFile file, Guid workspaceId, Guid ownerId)
+    public async Task<Document> UploadAsync(IFormFile file, Guid workspaceId, Guid ownerId, Guid? folderId = null)
     {
         var id = Guid.NewGuid();
         var ext = Path.GetExtension(file.FileName);
@@ -75,6 +75,7 @@ public class DocumentService(AppDbContext db, IConfiguration config) : IDocument
             StoragePath = storagePath,
             WorkspaceId = workspaceId,
             OwnerId = ownerId,
+            FolderId = folderId,
         };
 
         db.Documents.Add(doc);
@@ -85,6 +86,12 @@ public class DocumentService(AppDbContext db, IConfiguration config) : IDocument
     public async Task<IEnumerable<Document>> GetByWorkspaceAsync(Guid workspaceId) =>
         await db.Documents
             .Where(d => d.WorkspaceId == workspaceId)
+            .OrderByDescending(d => d.UpdatedAt)
+            .ToListAsync();
+
+    public async Task<IEnumerable<Document>> GetByFolderAsync(Guid folderId) =>
+        await db.Documents
+            .Where(d => d.FolderId == folderId)
             .OrderByDescending(d => d.UpdatedAt)
             .ToListAsync();
 

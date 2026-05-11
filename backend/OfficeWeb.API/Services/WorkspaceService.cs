@@ -27,6 +27,17 @@ public class WorkspaceService(AppDbContext db) : IWorkspaceService
         return (await GetByIdAsync(workspace.Id, ownerId))!;
     }
 
+    public async Task<Workspace?> RenameAsync(Guid id, Guid userId, string name)
+    {
+        var workspace = await db.Workspaces
+            .Include(w => w.Members).ThenInclude(m => m.User)
+            .FirstOrDefaultAsync(w => w.Id == id && w.Members.Any(m => m.UserId == userId && m.Role == "Owner"));
+        if (workspace is null) return null;
+        workspace.Name = name;
+        await db.SaveChangesAsync();
+        return workspace;
+    }
+
     public async Task<bool> DeleteAsync(Guid id, Guid userId)
     {
         var workspace = await db.Workspaces

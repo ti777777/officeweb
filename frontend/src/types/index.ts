@@ -1,3 +1,10 @@
+export interface Folder {
+  id: string
+  name: string
+  workspaceId: string
+  createdAt: string
+}
+
 export interface Document {
   id: string
   fileName: string
@@ -6,6 +13,7 @@ export interface Document {
   version: string
   createdAt: string
   updatedAt: string
+  folderId: string | null
 }
 
 export interface WopiTokenInfo {

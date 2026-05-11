@@ -38,6 +38,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IDocumentService, DocumentService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IWorkspaceService, WorkspaceService>();
+builder.Services.AddScoped<IFolderService, FolderService>();
 builder.Services.AddSingleton<IWopiTokenService, WopiTokenService>();
 builder.Services.AddHttpClient();
 
@@ -108,9 +109,22 @@ using (var scope = app.Services.CreateScope())
         );
         """);
 
+    // Idempotent: add Folders table when upgrading an existing database.
+    db.Database.ExecuteSqlRaw("""
+        CREATE TABLE IF NOT EXISTS "Folders" (
+            "Id"          TEXT NOT NULL CONSTRAINT "PK_Folders" PRIMARY KEY,
+            "Name"        TEXT NOT NULL,
+            "CreatedAt"   TEXT NOT NULL,
+            "WorkspaceId" TEXT NOT NULL,
+            CONSTRAINT "FK_Folders_Workspaces_WorkspaceId" FOREIGN KEY ("WorkspaceId") REFERENCES "Workspaces" ("Id") ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS "IX_Folders_WorkspaceId" ON "Folders" ("WorkspaceId");
+        """);
+
     // Idempotent: add new columns to Documents (SQLite has no ADD COLUMN IF NOT EXISTS).
     try { db.Database.ExecuteSqlRaw("ALTER TABLE \"Documents\" ADD COLUMN \"WorkspaceId\" TEXT"); } catch { }
     try { db.Database.ExecuteSqlRaw("ALTER TABLE \"Documents\" ADD COLUMN \"OwnerId\" TEXT"); } catch { }
+    try { db.Database.ExecuteSqlRaw("ALTER TABLE \"Documents\" ADD COLUMN \"FolderId\" TEXT"); } catch { }
 }
 
 if (app.Environment.IsDevelopment())

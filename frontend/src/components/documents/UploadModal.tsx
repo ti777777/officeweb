@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { Upload, X, File } from 'lucide-react'
 import clsx from 'clsx'
 import type { Document } from '../../types'
@@ -50,7 +51,7 @@ export default function UploadModal({ onClose, onUploaded, uploadFn }: Props) {
     }
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
@@ -133,6 +134,7 @@ export default function UploadModal({ onClose, onUploaded, uploadFn }: Props) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

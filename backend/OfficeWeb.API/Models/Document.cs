@@ -12,6 +12,8 @@ public class Document
     public required string StoragePath { get; set; }
     public Guid? WorkspaceId { get; set; }
     public Workspace? Workspace { get; set; }
+    public Guid? FolderId { get; set; }
+    public Folder? Folder { get; set; }
     public Guid? OwnerId { get; set; }
     public User? Owner { get; set; }
 }

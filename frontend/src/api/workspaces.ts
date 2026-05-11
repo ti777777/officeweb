@@ -9,6 +9,9 @@ export const workspacesApi = {
   create: (name: string, description?: string) =>
     api.post<Workspace>('/api/workspaces', { name, description }).then(r => r.data),
 
+  rename: (id: string, name: string) =>
+    api.patch<Workspace>(`/api/workspaces/${id}`, { name }).then(r => r.data),
+
   delete: (id: string) => api.delete(`/api/workspaces/${id}`),
 
   listDocuments: (id: string) =>

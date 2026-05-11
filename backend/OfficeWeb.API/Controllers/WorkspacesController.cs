@@ -15,6 +15,7 @@ public class WorkspacesController(IWorkspaceService workspaces, IDocumentService
         Guid.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
 
     public record CreateWorkspaceRequest(string Name, string? Description);
+    public record RenameWorkspaceRequest(string Name);
     public record AddMemberRequest(string UsernameOrEmail);
 
     [HttpGet]
@@ -38,6 +39,15 @@ public class WorkspacesController(IWorkspaceService workspaces, IDocumentService
     public async Task<IActionResult> GetById(Guid id)
     {
         var workspace = await workspaces.GetByIdAsync(id, CurrentUserId);
+        return workspace is null ? NotFound() : Ok(ToDto(workspace));
+    }
+
+    [HttpPatch("{id:guid}")]
+    public async Task<IActionResult> Rename(Guid id, [FromBody] RenameWorkspaceRequest req)
+    {
+        if (string.IsNullOrWhiteSpace(req.Name))
+            return BadRequest(new { error = "Workspace name is required." });
+        var workspace = await workspaces.RenameAsync(id, CurrentUserId, req.Name);
         return workspace is null ? NotFound() : Ok(ToDto(workspace));
     }
 
