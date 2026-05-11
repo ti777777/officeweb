@@ -1,6 +1,8 @@
 import { FileText, FileSpreadsheet, Presentation, Download, Trash2, Edit2, Eye, FolderInput, MoreHorizontal } from 'lucide-react'
+import { useState } from 'react'
 import type { Document } from '@/types'
 import { cn } from '@/lib/utils'
+import { documentsApi } from '@/api/documents'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,7 +18,6 @@ interface Props {
   onEdit: (id: string) => void
   onPreview?: (id: string) => void
   onMove?: (doc: Document) => void
-  downloadUrl: string
 }
 
 type FileKind = 'pdf' | 'sheet' | 'slide' | 'doc'
@@ -45,10 +46,27 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-export default function DocumentCard({ doc, onDelete, onEdit, onPreview, onMove, downloadUrl }: Props) {
+export default function DocumentCard({ doc, onDelete, onEdit, onPreview, onMove }: Props) {
   const kind = getKind(doc.contentType)
   const { icon, accent } = kindMeta[kind]
   const isPdf = kind === 'pdf'
+  const [downloading, setDownloading] = useState(false)
+
+  const handleDownload = async () => {
+    if (downloading) return
+    setDownloading(true)
+    try {
+      const blob = await documentsApi.getBlob(doc.id)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = doc.fileName
+      a.click()
+      URL.revokeObjectURL(url)
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   return (
     <div className="group bg-card border rounded-lg p-4 flex flex-col gap-3 hover:border-primary/40 hover:shadow-sm transition-all duration-150">
@@ -88,11 +106,9 @@ export default function DocumentCard({ doc, onDelete, onEdit, onPreview, onMove,
                 Edit
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem asChild>
-              <a href={downloadUrl} download={doc.fileName} className="flex items-center">
-                <Download className="w-4 h-4 mr-2" />
-                Download
-              </a>
+            <DropdownMenuItem onClick={() => void handleDownload()} disabled={downloading}>
+              <Download className="w-4 h-4 mr-2" />
+              {downloading ? 'Downloading…' : 'Download'}
             </DropdownMenuItem>
             {onMove && (
               <DropdownMenuItem onClick={() => onMove(doc)}>

@@ -617,7 +617,6 @@ export default function WorkspacePage() {
               onEdit={docId => navigate(`/editor/${docId}`)}
               onPreview={docId => navigate(`/pdf/${docId}`)}
               onMove={setMoveDoc}
-              downloadUrl={documentsApi.downloadUrl(doc.id)}
             />
           ))}
         </div>
