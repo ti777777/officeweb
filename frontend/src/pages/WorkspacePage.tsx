@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import {
   ArrowLeft, Check, ChevronRight, Folder as FolderIcon, FolderPlus,
@@ -392,6 +392,7 @@ function MoveDocumentDialog({ doc, folders, open, onClose, onMoved }: {
 export default function WorkspacePage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
   const { user } = useAuth()
   const [workspace, setWorkspace] = useState<Workspace | null>(null)
@@ -625,8 +626,8 @@ export default function WorkspacePage() {
               key={doc.id}
               doc={doc}
               onDelete={handleDelete}
-              onEdit={docId => navigate(`/editor/${docId}`)}
-              onPreview={docId => navigate(`/pdf/${docId}`)}
+              onEdit={docId => navigate(`/editor/${docId}?back=${encodeURIComponent(location.pathname + location.search)}`)}
+              onPreview={docId => navigate(`/pdf/${docId}?back=${encodeURIComponent(location.pathname + location.search)}`)}
               onMove={setMoveDoc}
             />
           ))}

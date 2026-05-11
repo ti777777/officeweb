@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { documentsApi } from '../api/documents'
 import { Button } from '@/components/ui/button'
@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 export default function PdfPreviewPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const backUrl = searchParams.get('back') ?? '/'
 
   const [blobUrl, setBlobUrl] = useState<string | null>(null)
   const [fileName, setFileName] = useState('')
@@ -43,7 +45,7 @@ export default function PdfPreviewPage() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate(-1)}
+          onClick={() => navigate(backUrl)}
           className="h-7 gap-1.5 text-sm"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -65,7 +67,7 @@ export default function PdfPreviewPage() {
           <div className="flex flex-col items-center justify-center h-full gap-4">
             <p className="text-destructive font-medium">Load failed</p>
             <p className="text-sm text-muted-foreground">{error}</p>
-            <Button onClick={() => navigate(-1)} size="sm">
+            <Button onClick={() => navigate(backUrl)} size="sm">
               Back
             </Button>
           </div>

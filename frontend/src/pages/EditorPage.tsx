@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { ArrowLeft, Loader2, Save } from 'lucide-react'
 import { documentsApi } from '../api/documents'
@@ -28,6 +28,8 @@ function triggerEditorSave() {
 export default function EditorPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const backUrl = searchParams.get('back') ?? '/'
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -46,7 +48,7 @@ export default function EditorPage() {
           (data.Values as Record<string, unknown>)?.success === true
         if (savingBack && isSaved) {
           if (navigateAfterSave.current) clearTimeout(navigateAfterSave.current)
-          navigate('/')
+          navigate(backUrl)
         }
       } catch {
         // ignore non-JSON or unrelated messages
@@ -61,10 +63,10 @@ export default function EditorPage() {
   }, [])
 
   const handleBack = useCallback(() => {
-    if (!wopiProps) { navigate('/'); return }
+    if (!wopiProps) { navigate(backUrl); return }
     setSavingBack(true)
     triggerEditorSave()
-    navigateAfterSave.current = setTimeout(() => navigate('/'), 1500)
+    navigateAfterSave.current = setTimeout(() => navigate(backUrl), 1500)
   }, [wopiProps, navigate])
 
   useEffect(() => {
@@ -143,7 +145,7 @@ export default function EditorPage() {
           <div className="flex flex-col items-center justify-center h-full gap-4">
             <p className="text-destructive font-medium">Load failed</p>
             <p className="text-sm text-muted-foreground max-w-sm text-center">{error}</p>
-            <Button onClick={() => navigate('/')} size="sm">
+            <Button onClick={() => navigate(backUrl)} size="sm">
               Back to documents
             </Button>
           </div>
