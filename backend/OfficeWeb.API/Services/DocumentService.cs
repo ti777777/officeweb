@@ -95,6 +95,16 @@ public class DocumentService(AppDbContext db, IConfiguration config) : IDocument
             .OrderByDescending(d => d.UpdatedAt)
             .ToListAsync();
 
+    public async Task<Document?> MoveAsync(Guid id, Guid? folderId)
+    {
+        var doc = await db.Documents.FindAsync(id);
+        if (doc is null) return null;
+        doc.FolderId = folderId;
+        doc.UpdatedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+        return doc;
+    }
+
     public async Task UpdateFileAsync(Guid id, Stream content)
     {
         var doc = await db.Documents.FindAsync(id);

@@ -19,6 +19,9 @@ export const documentsApi = {
 
   delete: (id: string) => api.delete(`/api/documents/${id}`),
 
+  move: (id: string, folderId: string | null) =>
+    api.patch<Document>(`/api/documents/${id}/move`, { folderId }).then(r => r.data),
+
   downloadUrl: (id: string) => `${import.meta.env.VITE_API_URL ?? ''}/api/documents/${id}/download`,
 
   getBlob: (id: string) =>

@@ -13,4 +13,5 @@ public interface IDocumentService
     Task<bool> DeleteAsync(Guid id);
     Task<(Stream stream, Document document)?> GetFileStreamAsync(Guid id);
     Task UpdateFileAsync(Guid id, Stream content);
+    Task<Document?> MoveAsync(Guid id, Guid? folderId);
 }

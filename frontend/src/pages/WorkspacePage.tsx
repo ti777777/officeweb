@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import {
   ArrowLeft, Check, ChevronRight, Folder as FolderIcon, FolderPlus,
-  Pencil, Plus, RefreshCw, Search, Trash2, Users, FileText, X, UserMinus,
+  Pencil, Plus, RefreshCw, Search, Trash2, Users, FileText, X, UserMinus, Home,
 } from 'lucide-react'
 import { workspacesApi } from '@/api/workspaces'
 import { documentsApi } from '@/api/documents'
@@ -294,6 +294,84 @@ function MembersDialog({ workspace, currentUserId, open, onClose, onUpdated }: {
   )
 }
 
+function MoveDocumentDialog({ doc, folders, open, onClose, onMoved }: {
+  doc: Document | null
+  folders: Folder[]
+  open: boolean
+  onClose: () => void
+  onMoved: (updatedDoc: Document) => void
+}) {
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null)
+  const [moving, setMoving] = useState(false)
+
+  useEffect(() => {
+    if (doc) setSelectedFolderId(doc.folderId)
+  }, [doc])
+
+  const handleMove = async () => {
+    if (!doc) return
+    setMoving(true)
+    try {
+      const updated = await documentsApi.move(doc.id, selectedFolderId)
+      toast.success(`Moved to ${folders.find(f => f.id === selectedFolderId)?.name ?? 'workspace root'}`)
+      onMoved(updated)
+    } catch {
+      toast.error('Failed to move document')
+    } finally {
+      setMoving(false)
+    }
+  }
+
+  const unchanged = selectedFolderId === (doc?.folderId ?? null)
+
+  return (
+    <Dialog open={open} onOpenChange={o => { if (!o && !moving) onClose() }}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Move to folder</DialogTitle>
+        </DialogHeader>
+        <div className="px-6 py-4 space-y-1 max-h-72 overflow-y-auto">
+          <button
+            onClick={() => setSelectedFolderId(null)}
+            className={cn(
+              'w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors',
+              selectedFolderId === null
+                ? 'bg-primary text-primary-foreground'
+                : 'hover:bg-accent text-foreground',
+            )}
+          >
+            <Home className="w-4 h-4 shrink-0" />
+            <span className="font-medium">Workspace root</span>
+          </button>
+          {folders.map(folder => (
+            <button
+              key={folder.id}
+              onClick={() => setSelectedFolderId(folder.id)}
+              className={cn(
+                'w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors',
+                selectedFolderId === folder.id
+                  ? 'bg-primary text-primary-foreground'
+                  : 'hover:bg-accent text-foreground',
+              )}
+            >
+              <FolderIcon className="w-4 h-4 shrink-0 text-amber-500" />
+              <span className="truncate">{folder.name}</span>
+            </button>
+          ))}
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onClose} disabled={moving}>
+            Cancel
+          </Button>
+          <Button onClick={() => void handleMove()} disabled={moving || unchanged}>
+            {moving ? 'Moving…' : 'Move'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export default function WorkspacePage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -307,6 +385,7 @@ export default function WorkspacePage() {
   const [showUpload, setShowUpload] = useState(false)
   const [showMembers, setShowMembers] = useState(false)
   const [showCreateFolder, setShowCreateFolder] = useState(false)
+  const [moveDoc, setMoveDoc] = useState<Document | null>(null)
 
   const fetchData = useCallback(async () => {
     if (!id) return
@@ -520,6 +599,7 @@ export default function WorkspacePage() {
               onDelete={handleDelete}
               onEdit={docId => navigate(`/editor/${docId}`)}
               onPreview={docId => navigate(`/pdf/${docId}`)}
+              onMove={setMoveDoc}
               downloadUrl={documentsApi.downloadUrl(doc.id)}
             />
           ))}
@@ -555,6 +635,17 @@ export default function WorkspacePage() {
           }}
         />
       )}
+
+      <MoveDocumentDialog
+        doc={moveDoc}
+        folders={folders}
+        open={moveDoc !== null}
+        onClose={() => setMoveDoc(null)}
+        onMoved={updated => {
+          setDocuments(prev => prev.map(d => d.id === updated.id ? updated : d))
+          setMoveDoc(null)
+        }}
+      />
     </div>
   )
 }

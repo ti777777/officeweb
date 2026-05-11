@@ -47,6 +47,13 @@ public class DocumentsController(
         return File(stream, doc.ContentType);
     }
 
+    [HttpPatch("{id:guid}/move")]
+    public async Task<ActionResult<Document>> Move(Guid id, [FromBody] MoveDocumentRequest request)
+    {
+        var doc = await docs.MoveAsync(id, request.FolderId);
+        return doc is null ? NotFound() : Ok(doc);
+    }
+
     [HttpGet("{id:guid}/wopi-token")]
     public async Task<ActionResult<object>> GetWopiToken(Guid id)
     {
@@ -69,3 +76,5 @@ public class DocumentsController(
         });
     }
 }
+
+public record MoveDocumentRequest(Guid? FolderId);

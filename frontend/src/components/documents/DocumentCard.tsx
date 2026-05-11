@@ -1,4 +1,4 @@
-import { FileText, FileSpreadsheet, Presentation, Download, Trash2, Edit2, Eye } from 'lucide-react'
+import { FileText, FileSpreadsheet, Presentation, Download, Trash2, Edit2, Eye, FolderInput } from 'lucide-react'
 import type { Document } from '@/types'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -9,6 +9,7 @@ interface Props {
   onDelete: (id: string) => void
   onEdit: (id: string) => void
   onPreview?: (id: string) => void
+  onMove?: (doc: Document) => void
   downloadUrl: string
 }
 
@@ -38,7 +39,7 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-export default function DocumentCard({ doc, onDelete, onEdit, onPreview, downloadUrl }: Props) {
+export default function DocumentCard({ doc, onDelete, onEdit, onPreview, onMove, downloadUrl }: Props) {
   const kind = getKind(doc.contentType)
   const { icon, accent } = kindMeta[kind]
   const isPdf = kind === 'pdf'
@@ -93,6 +94,20 @@ export default function DocumentCard({ doc, onDelete, onEdit, onPreview, downloa
           </TooltipTrigger>
           <TooltipContent>Download</TooltipContent>
         </Tooltip>
+
+        {onMove && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => onMove(doc)}
+                className="inline-flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+              >
+                <FolderInput className="w-3.5 h-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Move to folder</TooltipContent>
+          </Tooltip>
+        )}
 
         <Tooltip>
           <TooltipTrigger asChild>
