@@ -1,18 +1,32 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { createPortal } from 'react-dom'
 import { useParams, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import {
   ArrowLeft, Check, ChevronRight, Folder as FolderIcon, FolderPlus,
   Pencil, Plus, RefreshCw, Search, Trash2, Users, FileText, X, UserMinus,
 } from 'lucide-react'
-import { workspacesApi } from '../api/workspaces'
-import { documentsApi } from '../api/documents'
-import { foldersApi } from '../api/folders'
-import type { Workspace, Document, Folder } from '../types'
-import DocumentCard from '../components/documents/DocumentCard'
-import UploadModal from '../components/documents/UploadModal'
-import { useAuth } from '../contexts/AuthContext'
+import { workspacesApi } from '@/api/workspaces'
+import { documentsApi } from '@/api/documents'
+import { foldersApi } from '@/api/folders'
+import type { Workspace, Document, Folder } from '@/types'
+import DocumentCard from '@/components/documents/DocumentCard'
+import UploadModal from '@/components/documents/UploadModal'
+import { useAuth } from '@/contexts/AuthContext'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Separator } from '@/components/ui/separator'
+import { Skeleton } from '@/components/ui/skeleton'
+import { cn } from '@/lib/utils'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
 
 function FolderCard({ folder, onOpen, onDelete, onRename }: {
   folder: Folder
@@ -49,11 +63,17 @@ function FolderCard({ folder, onOpen, onDelete, onRename }: {
   return (
     <div
       onClick={editing ? undefined : onOpen}
-      className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow p-4 flex flex-col gap-3 cursor-pointer group"
+      className={cn(
+        'group bg-card border rounded-lg p-4 flex flex-col gap-3 cursor-pointer',
+        'hover:border-primary/40 hover:shadow-sm transition-all duration-150',
+        editing && 'border-primary/40',
+      )}
     >
       <div className="flex items-start gap-3">
-        <FolderIcon className="w-8 h-8 text-yellow-400 flex-shrink-0 mt-1" />
-        <div className="flex-1 min-w-0">
+        <div className="w-9 h-9 rounded-md bg-amber-50 flex items-center justify-center shrink-0">
+          <FolderIcon className="w-5 h-5 text-amber-500" />
+        </div>
+        <div className="flex-1 min-w-0 pt-0.5">
           {editing ? (
             <input
               ref={inputRef}
@@ -65,42 +85,43 @@ function FolderCard({ folder, onOpen, onDelete, onRename }: {
               }}
               onClick={e => e.stopPropagation()}
               disabled={saving}
-              className="w-full text-sm font-semibold text-gray-900 border border-primary-400 rounded px-1.5 py-0.5 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full text-sm font-medium bg-transparent border border-primary rounded px-1.5 py-0.5 focus:outline-none focus:ring-2 focus:ring-ring"
             />
           ) : (
-            <p className="text-sm font-semibold text-gray-900 truncate">{folder.name}</p>
+            <p className="text-sm font-medium truncate">{folder.name}</p>
           )}
           {!editing && (
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               {new Date(folder.createdAt).toLocaleDateString()}
             </p>
           )}
         </div>
       </div>
-      <div className="flex items-center gap-1 pt-1 border-t border-gray-100">
+
+      <div className="flex items-center gap-1 pt-1 border-t">
         {editing ? (
           <>
             <button
               onClick={e => { e.stopPropagation(); void handleSave() }}
               disabled={saving || !editName.trim()}
-              className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition-colors disabled:opacity-40"
+              className="p-1.5 rounded-md text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-40"
               title="Save"
             >
-              <Check className="w-4 h-4" />
+              <Check className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={e => { e.stopPropagation(); handleCancel() }}
               disabled={saving}
-              className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition-colors"
+              className="p-1.5 rounded-md text-muted-foreground hover:bg-muted transition-colors"
               title="Cancel"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
           </>
         ) : (
           <button
             onClick={e => { e.stopPropagation(); setEditing(true) }}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-primary-600 hover:bg-primary-50 transition-colors opacity-0 group-hover:opacity-100"
+            className="p-1.5 rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-primary hover:bg-accent transition-all"
             title="Rename folder"
           >
             <Pencil className="w-3.5 h-3.5" />
@@ -108,20 +129,21 @@ function FolderCard({ folder, onOpen, onDelete, onRename }: {
         )}
         <button
           onClick={e => { e.stopPropagation(); onDelete() }}
-          className="ml-auto flex items-center justify-center p-1.5 rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"
+          className="ml-auto p-1.5 rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive hover:bg-destructive/10 transition-all"
           title="Delete folder"
         >
-          <Trash2 className="w-4 h-4" />
+          <Trash2 className="w-3.5 h-3.5" />
         </button>
       </div>
     </div>
   )
 }
 
-function CreateFolderModal({ workspaceId, onClose, onCreated }: {
-  workspaceId: string
+function CreateFolderDialog({ open, onClose, onCreated, workspaceId }: {
+  open: boolean
   onClose: () => void
   onCreated: () => void
+  workspaceId: string
 }) {
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
@@ -133,6 +155,7 @@ function CreateFolderModal({ workspaceId, onClose, onCreated }: {
     try {
       await foldersApi.create(workspaceId, name.trim())
       toast.success('Folder created')
+      setName('')
       onCreated()
     } catch {
       toast.error('Failed to create folder')
@@ -141,50 +164,42 @@ function CreateFolderModal({ workspaceId, onClose, onCreated }: {
     }
   }
 
-  return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">New Folder</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        <form onSubmit={e => void handleSubmit(e)} className="p-6 space-y-4">
-          <input
-            type="text"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            placeholder="Folder name"
-            autoFocus
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-          />
-          <div className="flex gap-3 justify-end">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={!name.trim() || loading}
-              className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Creating...' : 'Create'}
-            </button>
+  return (
+    <Dialog open={open} onOpenChange={o => { if (!o && !loading) onClose() }}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>New Folder</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={e => void handleSubmit(e)}>
+          <div className="px-6 py-4">
+            <Label htmlFor="folder-name" className="mb-1.5 block">Folder name</Label>
+            <Input
+              id="folder-name"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="e.g. Reports"
+              autoFocus
+              required
+            />
           </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={!name.trim() || loading}>
+              {loading ? 'Creating…' : 'Create'}
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>,
-    document.body,
+      </DialogContent>
+    </Dialog>
   )
 }
 
-function MembersModal({ workspace, currentUserId, onClose, onUpdated }: {
+function MembersDialog({ workspace, currentUserId, open, onClose, onUpdated }: {
   workspace: Workspace
   currentUserId: string
+  open: boolean
   onClose: () => void
   onUpdated: () => void
 }) {
@@ -219,48 +234,37 @@ function MembersModal({ workspace, currentUserId, onClose, onUpdated }: {
     }
   }
 
-  return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Members</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+  return (
+    <Dialog open={open} onOpenChange={o => { if (!o) onClose() }}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Members</DialogTitle>
+        </DialogHeader>
 
-        <div className="p-6 space-y-4">
-          <ul className="divide-y divide-gray-100">
+        <div className="px-6 pb-6 space-y-4">
+          <ul className="space-y-1">
             {workspace.members.map(m => (
-              <li key={m.userId} className="flex items-center justify-between py-3">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{m.username}</p>
-                  <p className="text-xs text-gray-500">{m.email}</p>
+              <li key={m.userId} className="flex items-center gap-3 py-2">
+                <Avatar className="h-7 w-7 shrink-0">
+                  <AvatarFallback className="text-[10px]">
+                    {m.username.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium leading-none">{m.username}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{m.email}</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                    m.role === 'Owner'
-                      ? 'bg-primary-100 text-primary-700'
-                      : 'bg-gray-100 text-gray-600'
-                  }`}>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Badge variant={m.role === 'Owner' ? 'accent' : 'secondary'} className="text-[10px]">
                     {m.role}
-                  </span>
-                  {isOwner && m.userId !== currentUserId && (
+                  </Badge>
+                  {((isOwner && m.userId !== currentUserId) || (m.userId === currentUserId && m.role !== 'Owner')) && (
                     <button
                       onClick={() => void handleRemove(m.userId, m.username)}
-                      className="p-1 rounded text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
-                      title="Remove member"
+                      className="p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      title={m.userId === currentUserId ? 'Leave workspace' : 'Remove member'}
                     >
-                      <UserMinus className="w-4 h-4" />
-                    </button>
-                  )}
-                  {m.userId === currentUserId && m.role !== 'Owner' && (
-                    <button
-                      onClick={() => void handleRemove(m.userId, m.username)}
-                      className="p-1 rounded text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
-                      title="Leave workspace"
-                    >
-                      <UserMinus className="w-4 h-4" />
+                      <UserMinus className="w-3.5 h-3.5" />
                     </button>
                   )}
                 </div>
@@ -269,27 +273,24 @@ function MembersModal({ workspace, currentUserId, onClose, onUpdated }: {
           </ul>
 
           {isOwner && (
-            <form onSubmit={e => void handleAdd(e)} className="flex gap-2 pt-2 border-t border-gray-100">
-              <input
-                type="text"
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                placeholder="Username or email"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-              <button
-                type="submit"
-                disabled={!input.trim() || loading}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Add
-              </button>
-            </form>
+            <>
+              <Separator />
+              <form onSubmit={e => void handleAdd(e)} className="flex gap-2">
+                <Input
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  placeholder="Username or email"
+                  className="flex-1"
+                />
+                <Button type="submit" size="sm" disabled={!input.trim() || loading}>
+                  Add
+                </Button>
+              </form>
+            </>
           )}
         </div>
-      </div>
-    </div>,
-    document.body,
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -330,7 +331,7 @@ export default function WorkspacePage() {
   useEffect(() => { void fetchData() }, [fetchData])
 
   const handleUploaded = (doc: Document) => {
-    toast.success(`${doc.fileName} uploaded successfully`)
+    toast.success(`${doc.fileName} uploaded`)
     setShowUpload(false)
     setDocuments(prev => [doc, ...prev])
   }
@@ -398,10 +399,13 @@ export default function WorkspacePage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="h-8 bg-gray-200 rounded w-48 animate-pulse" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="flex items-center gap-3">
+          <Skeleton className="w-8 h-8 rounded-md" />
+          <Skeleton className="h-5 w-48" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-xl border border-gray-200 p-4 animate-pulse h-28" />
+            <Skeleton key={i} className="h-28 rounded-lg" />
           ))}
         </div>
       </div>
@@ -411,95 +415,95 @@ export default function WorkspacePage() {
   if (!workspace) return null
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-        <div className="flex items-center gap-3">
-          <button
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+        <div className="flex items-start gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => navigate('/')}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+            className="mt-0.5 h-8 w-8 shrink-0"
             title="Back to workspaces"
           >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+            <ArrowLeft />
+          </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{workspace.name}</h1>
+            <h1 className="text-lg font-semibold leading-tight">{workspace.name}</h1>
             {workspace.description && (
-              <p className="text-sm text-gray-500 mt-0.5">{workspace.description}</p>
+              <p className="text-sm text-muted-foreground mt-0.5">{workspace.description}</p>
             )}
           </div>
         </div>
+
         <div className="sm:ml-auto flex items-center gap-2">
-          <button
-            onClick={() => setShowMembers(true)}
-            className="flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
-          >
-            <Users className="w-4 h-4" />
+          <Button variant="outline" size="sm" onClick={() => setShowMembers(true)}>
+            <Users />
             {workspace.members.length} member{workspace.members.length !== 1 ? 's' : ''}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => void fetchData()}
-            className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
             title="Refresh"
+            className="h-8 w-8"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </button>
-          <button
-            onClick={() => setShowCreateFolder(true)}
-            className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
-          >
-            <FolderPlus className="w-4 h-4" />
+            <RefreshCw className={loading ? 'animate-spin' : ''} />
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setShowCreateFolder(true)}>
+            <FolderPlus />
             New Folder
-          </button>
-          <button
-            onClick={() => setShowUpload(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
+          </Button>
+          <Button size="sm" onClick={() => setShowUpload(true)}>
+            <Plus />
             Upload
-          </button>
+          </Button>
         </div>
       </div>
 
-      {/* Breadcrumb */}
       {activeFolder && (
         <div className="flex items-center gap-1.5 text-sm">
           <button
             onClick={() => { setActiveFolder(null); setSearch('') }}
-            className="text-primary-600 hover:text-primary-800 font-medium transition-colors"
+            className="text-primary hover:underline underline-offset-4 font-medium transition-colors"
           >
             {workspace.name}
           </button>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-gray-900 font-medium">{activeFolder.name}</span>
+          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="font-medium">{activeFolder.name}</span>
         </div>
       )}
 
-      {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <input
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+        <Input
           type="search"
-          placeholder={activeFolder ? `Search in ${activeFolder.name}...` : 'Search folders and documents...'}
+          placeholder={activeFolder ? `Search in ${activeFolder.name}…` : 'Search folders and documents…'}
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          className="pl-9"
         />
       </div>
 
-      {/* Grid */}
       {isEmpty ? (
-        <div className="flex flex-col items-center justify-center py-24 text-center">
-          <FileText className="w-16 h-16 text-gray-300 mb-4" />
-          <h3 className="text-lg font-semibold text-gray-600">
+        <div className="flex flex-col items-center justify-center py-28 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center mb-4">
+            <FileText className="w-8 h-8 text-accent-foreground" />
+          </div>
+          <h3 className="text-base font-semibold">
             {search ? 'No matching items' : activeFolder ? 'Folder is empty' : 'Nothing here yet'}
           </h3>
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             {search ? 'Try a different search term' : 'Use "New Folder" or "Upload" to add content'}
           </p>
+          {!search && (
+            <Button onClick={() => setShowUpload(true)} className="mt-5" size="sm">
+              <Plus />
+              Upload document
+            </Button>
+          )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {filteredFolders.map(folder => (
             <FolderCard
               key={folder.id}
@@ -523,7 +527,8 @@ export default function WorkspacePage() {
       )}
 
       {showCreateFolder && id && (
-        <CreateFolderModal
+        <CreateFolderDialog
+          open={showCreateFolder}
           workspaceId={id}
           onClose={() => setShowCreateFolder(false)}
           onCreated={() => void handleFolderCreated()}
@@ -538,10 +543,11 @@ export default function WorkspacePage() {
         />
       )}
 
-      {showMembers && workspace && (
-        <MembersModal
+      {workspace && (
+        <MembersDialog
           workspace={workspace}
           currentUserId={user?.id ?? ''}
+          open={showMembers}
           onClose={() => setShowMembers(false)}
           onUpdated={() => {
             setShowMembers(false)

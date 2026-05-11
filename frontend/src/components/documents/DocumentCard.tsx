@@ -1,5 +1,8 @@
 import { FileText, FileSpreadsheet, Presentation, Download, Trash2, Edit2, Eye } from 'lucide-react'
-import type { Document } from '../../types'
+import type { Document } from '@/types'
+import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
 interface Props {
   doc: Document
@@ -9,14 +12,20 @@ interface Props {
   downloadUrl: string
 }
 
-function fileIcon(contentType: string) {
-  if (contentType === 'application/pdf')
-    return <FileText className="w-8 h-8 text-red-500" />
-  if (contentType.includes('spreadsheet') || contentType.includes('excel'))
-    return <FileSpreadsheet className="w-8 h-8 text-green-500" />
-  if (contentType.includes('presentation') || contentType.includes('powerpoint'))
-    return <Presentation className="w-8 h-8 text-orange-500" />
-  return <FileText className="w-8 h-8 text-blue-500" />
+type FileKind = 'pdf' | 'sheet' | 'slide' | 'doc'
+
+function getKind(contentType: string): FileKind {
+  if (contentType === 'application/pdf') return 'pdf'
+  if (contentType.includes('spreadsheet') || contentType.includes('excel')) return 'sheet'
+  if (contentType.includes('presentation') || contentType.includes('powerpoint')) return 'slide'
+  return 'doc'
+}
+
+const kindMeta: Record<FileKind, { icon: React.ReactNode; accent: string; label: string }> = {
+  pdf:   { icon: <FileText className="w-5 h-5" />,         accent: 'text-red-500 bg-red-50',     label: 'PDF' },
+  sheet: { icon: <FileSpreadsheet className="w-5 h-5" />,  accent: 'text-emerald-600 bg-emerald-50', label: 'Spreadsheet' },
+  slide: { icon: <Presentation className="w-5 h-5" />,     accent: 'text-amber-600 bg-amber-50', label: 'Presentation' },
+  doc:   { icon: <FileText className="w-5 h-5" />,         accent: 'text-primary bg-accent',     label: 'Document' },
 }
 
 function formatBytes(bytes: number) {
@@ -26,61 +35,76 @@ function formatBytes(bytes: number) {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' })
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-const isPdf = (contentType: string) => contentType === 'application/pdf'
-
 export default function DocumentCard({ doc, onDelete, onEdit, onPreview, downloadUrl }: Props) {
+  const kind = getKind(doc.contentType)
+  const { icon, accent } = kindMeta[kind]
+  const isPdf = kind === 'pdf'
+
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow p-4 flex flex-col gap-3">
+    <div className="group bg-card border rounded-lg p-4 flex flex-col gap-3 hover:border-primary/40 hover:shadow-sm transition-all duration-150">
       <div className="flex items-start gap-3">
-        <div className="flex-shrink-0 mt-1">{fileIcon(doc.contentType)}</div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-gray-900 truncate" title={doc.fileName}>
+        <div className={cn('w-9 h-9 rounded-md flex items-center justify-center shrink-0', accent)}>
+          {icon}
+        </div>
+        <div className="flex-1 min-w-0 pt-0.5">
+          <p className="text-sm font-medium truncate leading-snug" title={doc.fileName}>
             {doc.fileName}
           </p>
-          <p className="text-xs text-gray-500 mt-0.5">
+          <p className="text-xs text-muted-foreground mt-0.5">
             {formatBytes(doc.size)} · {formatDate(doc.updatedAt)}
           </p>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 pt-1 border-t border-gray-100">
-        {isPdf(doc.contentType) ? (
-          <button
+      <div className="flex items-center gap-1.5 pt-1 border-t">
+        {isPdf ? (
+          <Button
+            size="sm"
+            variant="secondary"
+            className="flex-1 h-7 text-xs"
             onClick={() => onPreview?.(doc.id)}
-            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors"
           >
             <Eye className="w-3.5 h-3.5" />
             Preview
-          </button>
+          </Button>
         ) : (
-          <button
+          <Button
+            size="sm"
+            className="flex-1 h-7 text-xs"
             onClick={() => onEdit(doc.id)}
-            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 transition-colors"
           >
             <Edit2 className="w-3.5 h-3.5" />
             Edit
-          </button>
+          </Button>
         )}
 
-        <a
-          href={downloadUrl}
-          download={doc.fileName}
-          className="flex items-center justify-center p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
-          title="Download"
-        >
-          <Download className="w-4 h-4" />
-        </a>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <a
+              href={downloadUrl}
+              download={doc.fileName}
+              className="inline-flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" />
+            </a>
+          </TooltipTrigger>
+          <TooltipContent>Download</TooltipContent>
+        </Tooltip>
 
-        <button
-          onClick={() => onDelete(doc.id)}
-          className="flex items-center justify-center p-1.5 rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
-          title="Delete"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => onDelete(doc.id)}
+              className="inline-flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>Delete</TooltipContent>
+        </Tooltip>
       </div>
     </div>
   )

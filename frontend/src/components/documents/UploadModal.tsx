@@ -1,8 +1,16 @@
 import { useState, useCallback } from 'react'
-import { createPortal } from 'react-dom'
-import { Upload, X, File } from 'lucide-react'
-import clsx from 'clsx'
-import type { Document } from '../../types'
+import { Upload, File, X } from 'lucide-react'
+import type { Document } from '@/types'
+import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { Progress } from '@/components/ui/progress'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
 
 interface Props {
   onClose: () => void
@@ -51,34 +59,35 @@ export default function UploadModal({ onClose, onUploaded, uploadFn }: Props) {
     }
   }
 
-  return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Upload Document</h2>
-          <button onClick={onClose} disabled={uploading} className="text-gray-400 hover:text-gray-600 transition-colors">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+  return (
+    <Dialog open onOpenChange={open => { if (!open && !uploading) onClose() }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Upload Document</DialogTitle>
+        </DialogHeader>
 
-        <div className="p-6 space-y-4">
+        <div className="px-6 py-4 space-y-4">
           <div
             onDrop={handleDrop}
             onDragOver={e => { e.preventDefault(); setDragOver(true) }}
             onDragLeave={() => setDragOver(false)}
-            onClick={() => document.getElementById('file-input')?.click()}
-            className={clsx(
-              'border-2 border-dashed rounded-xl p-8 flex flex-col items-center gap-3 cursor-pointer transition-colors',
-              dragOver ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-primary-400 hover:bg-gray-50',
+            onClick={() => document.getElementById('upload-file-input')?.click()}
+            className={cn(
+              'border-2 border-dashed rounded-lg p-8 flex flex-col items-center gap-3 cursor-pointer transition-colors',
+              dragOver
+                ? 'border-primary bg-accent'
+                : 'border-border hover:border-primary/50 hover:bg-accent/50',
             )}
           >
-            <Upload className={clsx('w-10 h-10', dragOver ? 'text-primary-500' : 'text-gray-400')} />
+            <div className={cn('w-12 h-12 rounded-full flex items-center justify-center', dragOver ? 'bg-primary/20' : 'bg-muted')}>
+              <Upload className={cn('w-5 h-5', dragOver ? 'text-primary' : 'text-muted-foreground')} />
+            </div>
             <div className="text-center">
-              <p className="text-sm font-medium text-gray-700">Drag &amp; drop a file here or click to select</p>
-              <p className="text-xs text-gray-500 mt-1">Supports PDF, Word, Excel, PowerPoint, ODF, TXT (max 100 MB)</p>
+              <p className="text-sm font-medium">Drop a file or click to browse</p>
+              <p className="text-xs text-muted-foreground mt-1">PDF, Word, Excel, PowerPoint, ODF, TXT — max 100 MB</p>
             </div>
             <input
-              id="file-input"
+              id="upload-file-input"
               type="file"
               accept={ACCEPTED}
               className="hidden"
@@ -87,14 +96,19 @@ export default function UploadModal({ onClose, onUploaded, uploadFn }: Props) {
           </div>
 
           {file && (
-            <div className="flex items-center gap-3 bg-gray-50 rounded-lg px-4 py-3">
-              <File className="w-5 h-5 text-primary-500 flex-shrink-0" />
+            <div className="flex items-center gap-3 bg-accent rounded-lg px-4 py-3">
+              <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                <File className="w-4 h-4 text-primary" />
+              </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-800 truncate">{file.name}</p>
-                <p className="text-xs text-gray-500">{(file.size / 1024).toFixed(1)} KB</p>
+                <p className="text-sm font-medium truncate">{file.name}</p>
+                <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(1)} KB</p>
               </div>
               {!uploading && (
-                <button onClick={() => setFile(null)} className="text-gray-400 hover:text-gray-600">
+                <button
+                  onClick={() => setFile(null)}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
                   <X className="w-4 h-4" />
                 </button>
               )}
@@ -102,39 +116,25 @@ export default function UploadModal({ onClose, onUploaded, uploadFn }: Props) {
           )}
 
           {uploading && (
-            <div className="space-y-1">
-              <div className="flex justify-between text-xs text-gray-600">
-                <span>Uploading...</span>
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Uploading…</span>
                 <span>{progress}%</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-primary-500 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
+              <Progress value={progress} />
             </div>
           )}
         </div>
 
-        <div className="px-6 pb-6 flex gap-3 justify-end">
-          <button
-            onClick={onClose}
-            disabled={uploading}
-            className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
-          >
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={uploading}>
             Cancel
-          </button>
-          <button
-            onClick={() => void handleSubmit()}
-            disabled={!file || uploading}
-            className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {uploading ? 'Uploading...' : 'Upload'}
-          </button>
-        </div>
-      </div>
-    </div>,
-    document.body,
+          </Button>
+          <Button onClick={() => void handleSubmit()} disabled={!file || uploading}>
+            {uploading ? 'Uploading…' : 'Upload'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

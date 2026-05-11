@@ -1,8 +1,23 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { FileText } from 'lucide-react'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '@/contexts/AuthContext'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+
+function Logo() {
+  return (
+    <div className="flex items-center gap-2.5">
+      <div className="relative w-9 h-9">
+        <div className="absolute inset-0 rounded-lg bg-primary" />
+        <div className="absolute inset-[4px] rounded-md bg-primary-foreground/20" />
+        <div className="absolute inset-[8px] rounded-[3px] bg-primary-foreground" />
+      </div>
+      <span className="text-xl font-bold tracking-tight">OfficeWeb</span>
+    </div>
+  )
+}
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -28,66 +43,61 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <div className="flex flex-col items-center mb-8">
-          <div className="flex items-center gap-2 text-primary-600 mb-2">
-            <FileText className="w-8 h-8" />
-            <span className="text-2xl font-bold text-gray-900">OfficeWeb</span>
-          </div>
-          <p className="text-gray-500 text-sm">Sign in to manage your documents</p>
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4"
+      style={{
+        backgroundImage: `radial-gradient(circle at 1px 1px, hsl(var(--border)) 1px, transparent 0)`,
+        backgroundSize: '24px 24px',
+      }}
+    >
+      <div className="w-full max-w-sm animate-fade-in">
+        <div className="flex flex-col items-center mb-8 gap-1">
+          <Logo />
+          <p className="text-sm text-muted-foreground mt-2">Sign in to your workspace</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-          <h1 className="text-xl font-semibold text-gray-900 mb-6">Sign In</h1>
+        <div className="bg-card border rounded-xl shadow-sm p-7">
+          <h1 className="text-lg font-semibold mb-5">Welcome back</h1>
 
           <form onSubmit={e => void handleSubmit(e)} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
-              <input
+            <div className="space-y-1.5">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
                 type="email"
                 required
                 autoComplete="email"
+                autoFocus
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 placeholder="you@example.com"
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Password
-              </label>
-              <input
+            <div className="space-y-1.5">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
                 type="password"
                 required
                 autoComplete="current-password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 placeholder="••••••••"
               />
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-2 px-4 bg-primary-600 hover:bg-primary-700 disabled:opacity-60 text-white font-medium rounded-lg text-sm transition-colors"
-            >
-              {loading ? 'Signing in...' : 'Sign In'}
-            </button>
+            <Button type="submit" disabled={loading} className="w-full mt-1">
+              {loading ? 'Signing in…' : 'Sign In'}
+            </Button>
           </form>
-
-          <p className="mt-6 text-center text-sm text-gray-500">
-            Don&apos;t have an account?{' '}
-            <Link to="/register" className="text-primary-600 hover:underline font-medium">
-              Sign up
-            </Link>
-          </p>
         </div>
+
+        <p className="mt-5 text-center text-sm text-muted-foreground">
+          No account?{' '}
+          <Link to="/register" className="text-primary font-medium hover:underline underline-offset-4">
+            Create one
+          </Link>
+        </p>
       </div>
     </div>
   )

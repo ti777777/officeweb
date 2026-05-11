@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import { ArrowLeft, Loader2, Save } from 'lucide-react'
 import { documentsApi } from '../api/documents'
 import WopiEditor, { type WopiEditorProps } from '../components/editors/WopiEditor'
+import { Button } from '@/components/ui/button'
 
 function buildActionUrl(rawUrl: string, wopiSrc: string): string {
   const encodedSrc = encodeURIComponent(wopiSrc)
@@ -105,13 +106,14 @@ export default function EditorPage() {
   }, [id])
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-gray-100">
-      {/* Toolbar */}
-      <div className="flex items-center gap-3 px-4 h-12 bg-white border-b border-gray-200 shadow-sm flex-shrink-0">
-        <button
+    <div className="fixed inset-0 flex flex-col bg-muted">
+      <div className="flex items-center gap-3 px-4 h-12 bg-background border-b flex-shrink-0">
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={handleBack}
           disabled={savingBack}
-          className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-60"
+          className="h-7 gap-1.5 text-sm"
         >
           {savingBack ? (
             <>
@@ -124,30 +126,26 @@ export default function EditorPage() {
               Back
             </>
           )}
-        </button>
-        <span className="text-gray-300">|</span>
-        <span className="text-sm font-medium text-gray-800 truncate max-w-xs">{fileName}</span>
+        </Button>
+        <span className="text-border">|</span>
+        <span className="text-sm font-medium truncate max-w-xs">{fileName}</span>
       </div>
 
-      {/* Editor area */}
       <div className="flex-1 overflow-hidden">
         {loading && (
-          <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-500">
-            <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+          <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
             <p className="text-sm">Loading editor…</p>
           </div>
         )}
 
         {error && (
           <div className="flex flex-col items-center justify-center h-full gap-4">
-            <p className="text-red-600 font-medium">Load failed</p>
-            <p className="text-sm text-gray-500 max-w-sm text-center">{error}</p>
-            <button
-              onClick={() => navigate('/')}
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm hover:bg-primary-700"
-            >
+            <p className="text-destructive font-medium">Load failed</p>
+            <p className="text-sm text-muted-foreground max-w-sm text-center">{error}</p>
+            <Button onClick={() => navigate('/')} size="sm">
               Back to documents
-            </button>
+            </Button>
           </div>
         )}
 
