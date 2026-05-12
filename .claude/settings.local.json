@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Tsai\\\\Desktop\\\\officeweb\" -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Get-ChildItem -Recurse -Directory)",
+      "Bash(Select-Object FullName -ExpandProperty FullName)",
+      "Bash(dotnet build *)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(.\\\\node_modules\\\\.bin\\\\tsc --noEmit)"
+    ]
+  }
+}

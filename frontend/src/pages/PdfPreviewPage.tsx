@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { documentsApi } from '../api/documents'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 export default function PdfPreviewPage() {
   const { id } = useParams<{ id: string }>()
@@ -42,15 +43,13 @@ export default function PdfPreviewPage() {
   return (
     <div className="fixed inset-0 flex flex-col bg-muted">
       <div className="flex items-center gap-3 px-4 h-12 bg-background border-b flex-shrink-0">
-        <Button
-          variant="ghost"
-          size="sm"
+        <button
           onClick={() => navigate(backUrl)}
-          className="h-7 gap-1.5 text-sm"
+          className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'h-7 gap-1.5 text-sm')}
         >
           <ArrowLeft className="w-4 h-4" />
           Back
-        </Button>
+        </button>
         <span className="text-border">|</span>
         <span className="text-sm font-medium truncate max-w-xs">{fileName}</span>
       </div>
@@ -67,9 +66,12 @@ export default function PdfPreviewPage() {
           <div className="flex flex-col items-center justify-center h-full gap-4">
             <p className="text-destructive font-medium">Load failed</p>
             <p className="text-sm text-muted-foreground">{error}</p>
-            <Button onClick={() => navigate(backUrl)} size="sm">
+            <button
+              onClick={() => navigate(backUrl)}
+              className={cn(buttonVariants({ size: 'sm' }))}
+            >
               Back
-            </Button>
+            </button>
           </div>
         )}
 

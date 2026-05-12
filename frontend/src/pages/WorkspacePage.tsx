@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import {
-  ArrowLeft, Check, ChevronRight, Folder as FolderIcon, FolderPlus,
+  Check, ChevronRight, Folder as FolderIcon, FolderPlus,
   MoreHorizontal, Pencil, Plus, RefreshCw, Search, Trash2, Users, FileText, X, UserMinus, Home,
 } from 'lucide-react'
 import { workspacesApi } from '@/api/workspaces'
@@ -12,13 +12,11 @@ import type { Workspace, Document, Folder } from '@/types'
 import DocumentCard from '@/components/documents/DocumentCard'
 import UploadModal from '@/components/documents/UploadModal'
 import { useAuth } from '@/contexts/AuthContext'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
-import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import {
   Dialog,
@@ -86,11 +84,11 @@ function FolderCard({ folder, onOpen, onDelete, onRename }: {
               ref={inputRef}
               value={editName}
               onChange={e => setEditName(e.target.value)}
-              onKeyDown={e => {
+              onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
                 if (e.key === 'Enter') void handleSave()
                 if (e.key === 'Escape') handleCancel()
               }}
-              onClick={e => e.stopPropagation()}
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
               disabled={saving}
               className="w-full text-sm font-medium bg-transparent border border-primary rounded px-1.5 py-0.5 focus:outline-none focus:ring-2 focus:ring-ring"
             />
@@ -107,7 +105,7 @@ function FolderCard({ folder, onOpen, onDelete, onRename }: {
         {editing ? (
           <div className="flex items-center gap-1 shrink-0">
             <button
-              onClick={e => { e.stopPropagation(); void handleSave() }}
+              onClick={(e: React.MouseEvent) => { e.stopPropagation(); void handleSave() }}
               disabled={saving || !editName.trim()}
               className="p-1.5 rounded-md text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-40"
               title="Save"
@@ -115,7 +113,7 @@ function FolderCard({ folder, onOpen, onDelete, onRename }: {
               <Check className="w-3.5 h-3.5" />
             </button>
             <button
-              onClick={e => { e.stopPropagation(); handleCancel() }}
+              onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleCancel() }}
               disabled={saving}
               className="p-1.5 rounded-md text-muted-foreground hover:bg-muted transition-colors"
               title="Cancel"
@@ -126,23 +124,21 @@ function FolderCard({ folder, onOpen, onDelete, onRename }: {
         ) : (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={e => e.stopPropagation()}
+              <button
+                className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity')}
+                onClick={(e: React.MouseEvent) => e.stopPropagation()}
               >
                 <MoreHorizontal className="w-4 h-4" />
-              </Button>
+              </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuItem onClick={e => { e.stopPropagation(); setEditing(true) }}>
+              <DropdownMenuItem onClick={(e: React.MouseEvent) => { e.stopPropagation(); setEditing(true) }}>
                 <Pencil className="w-4 h-4 mr-2" />
                 Rename
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={e => { e.stopPropagation(); onDelete() }}
+                onClick={(e: React.MouseEvent) => { e.stopPropagation(); onDelete() }}
                 className="text-destructive focus:text-destructive"
               >
                 <Trash2 className="w-4 h-4 mr-2" />
@@ -183,7 +179,7 @@ function CreateFolderDialog({ open, onClose, onCreated, workspaceId, parentFolde
   }
 
   return (
-    <Dialog open={open} onOpenChange={o => { if (!o && !loading) onClose() }}>
+    <Dialog open={open} onOpenChange={(o: boolean) => { if (!o && !loading) onClose() }}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle>New Folder</DialogTitle>
@@ -201,12 +197,21 @@ function CreateFolderDialog({ open, onClose, onCreated, workspaceId, parentFolde
             />
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              className={cn(buttonVariants({ variant: 'outline' }))}
+            >
               Cancel
-            </Button>
-            <Button type="submit" disabled={!name.trim() || loading}>
+            </button>
+            <button
+              type="submit"
+              disabled={!name.trim() || loading}
+              className={cn(buttonVariants())}
+            >
               {loading ? 'Creating…' : 'Create'}
-            </Button>
+            </button>
           </DialogFooter>
         </form>
       </DialogContent>
@@ -253,12 +258,11 @@ function MembersDialog({ workspace, currentUserId, open, onClose, onUpdated }: {
   }
 
   return (
-    <Dialog open={open} onOpenChange={o => { if (!o) onClose() }}>
+    <Dialog open={open} onOpenChange={(o: boolean) => { if (!o) onClose() }}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle>Members</DialogTitle>
         </DialogHeader>
-
         <div className="px-6 pb-6 space-y-4">
           <ul className="space-y-1">
             {workspace.members.map(m => (
@@ -273,9 +277,14 @@ function MembersDialog({ workspace, currentUserId, open, onClose, onUpdated }: {
                   <p className="text-xs text-muted-foreground mt-0.5 truncate">{m.email}</p>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <Badge variant={m.role === 'Owner' ? 'accent' : 'secondary'} className="text-[10px]">
+                  <span className={cn(
+                    'text-xs px-2 py-0.5 rounded-full font-medium',
+                    m.role === 'Owner'
+                      ? 'bg-primary/10 text-primary'
+                      : 'bg-secondary text-secondary-foreground',
+                  )}>
                     {m.role}
-                  </Badge>
+                  </span>
                   {((isOwner && m.userId !== currentUserId) || (m.userId === currentUserId && m.role !== 'Owner')) && (
                     <button
                       onClick={() => void handleRemove(m.userId, m.username)}
@@ -289,7 +298,6 @@ function MembersDialog({ workspace, currentUserId, open, onClose, onUpdated }: {
               </li>
             ))}
           </ul>
-
           {isOwner && (
             <>
               <Separator />
@@ -300,9 +308,13 @@ function MembersDialog({ workspace, currentUserId, open, onClose, onUpdated }: {
                   placeholder="Username or email"
                   className="flex-1"
                 />
-                <Button type="submit" size="sm" disabled={!input.trim() || loading}>
+                <button
+                  type="submit"
+                  disabled={!input.trim() || loading}
+                  className={cn(buttonVariants({ size: 'sm' }))}
+                >
                   Add
-                </Button>
+                </button>
               </form>
             </>
           )}
@@ -343,7 +355,7 @@ function MoveDocumentDialog({ doc, folders, open, onClose, onMoved }: {
   const unchanged = selectedFolderId === (doc?.folderId ?? null)
 
   return (
-    <Dialog open={open} onOpenChange={o => { if (!o && !moving) onClose() }}>
+    <Dialog open={open} onOpenChange={(o: boolean) => { if (!o && !moving) onClose() }}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle>Move to folder</DialogTitle>
@@ -378,12 +390,21 @@ function MoveDocumentDialog({ doc, folders, open, onClose, onMoved }: {
           ))}
         </div>
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={onClose} disabled={moving}>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={moving}
+            className={cn(buttonVariants({ variant: 'outline' }))}
+          >
             Cancel
-          </Button>
-          <Button onClick={() => void handleMove()} disabled={moving || unchanged}>
+          </button>
+          <button
+            onClick={() => void handleMove()}
+            disabled={moving || unchanged}
+            className={cn(buttonVariants())}
+          >
             {moving ? 'Moving…' : 'Move'}
-          </Button>
+          </button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -438,7 +459,10 @@ export default function WorkspacePage() {
     }
   }, [id, navigate])
 
-  useEffect(() => { void fetchData() }, [fetchData])
+  useEffect(() => {
+    setSearch('')
+    void fetchData()
+  }, [id, fetchData])
 
   const handleUploaded = (doc: Document) => {
     toast.success(`${doc.fileName} uploaded`)
@@ -459,7 +483,7 @@ export default function WorkspacePage() {
   }
 
   const handleDeleteFolder = async (folder: Folder) => {
-    if (!confirm(`Delete folder "${folder.name}"? All subfolders and documents inside will be deleted or moved to the workspace root.`)) return
+    if (!confirm(`Delete folder "${folder.name}"? All subfolders and documents inside will be deleted or moved to workspace root.`)) return
     try {
       await foldersApi.delete(id!, folder.id)
       const getAllDescendantIds = (folderId: string, all: Folder[]): string[] => {
@@ -523,16 +547,8 @@ export default function WorkspacePage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <Skeleton className="w-8 h-8 rounded-md" />
-          <Skeleton className="h-5 w-48" />
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton key={i} className="h-28 rounded-lg" />
-          ))}
-        </div>
+      <div className="flex-1 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -540,129 +556,148 @@ export default function WorkspacePage() {
   if (!workspace) return null
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-        <div className="flex items-start gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate('/')}
-            className="mt-0.5 h-8 w-8 shrink-0"
-            title="Back to workspaces"
-          >
-            <ArrowLeft />
-          </Button>
-          <div>
-            <h1 className="text-lg font-semibold leading-tight">{workspace.name}</h1>
-            {workspace.description && (
-              <p className="text-sm text-muted-foreground mt-0.5">{workspace.description}</p>
-            )}
-          </div>
-        </div>
-
-        <div className="sm:ml-auto flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setShowMembers(true)}>
-            <Users />
-            {workspace.members.length} member{workspace.members.length !== 1 ? 's' : ''}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => void fetchData()}
-            title="Refresh"
-            className="h-8 w-8"
-          >
-            <RefreshCw className={loading ? 'animate-spin' : ''} />
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setShowCreateFolder(true)}>
-            <FolderPlus />
-            New Folder
-          </Button>
-          <Button size="sm" onClick={() => setShowUpload(true)}>
-            <Plus />
-            Upload
-          </Button>
-        </div>
-      </div>
-
-      {activeFolder && (
-        <div className="flex items-center gap-1.5 text-sm flex-wrap">
-          <button
-            onClick={closeFolder}
-            className="text-primary hover:underline underline-offset-4 font-medium transition-colors"
-          >
-            {workspace.name}
-          </button>
-          {folderBreadcrumb.map((f, i) => (
-            <span key={f.id} className="flex items-center gap-1.5">
-              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
-              {i < folderBreadcrumb.length - 1 ? (
-                <button
-                  onClick={() => openFolder(f)}
-                  className="text-primary hover:underline underline-offset-4 font-medium transition-colors"
-                >
-                  {f.name}
-                </button>
-              ) : (
-                <span className="font-medium">{f.name}</span>
-              )}
-            </span>
-          ))}
-        </div>
-      )}
-
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-        <Input
-          type="search"
-          placeholder={activeFolder ? `Search in ${activeFolder.name}…` : 'Search folders and documents…'}
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="pl-9"
-        />
-      </div>
-
-      {isEmpty ? (
-        <div className="flex flex-col items-center justify-center py-28 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center mb-4">
-            <FileText className="w-8 h-8 text-accent-foreground" />
-          </div>
-          <h3 className="text-base font-semibold">
-            {search ? 'No matching items' : activeFolder ? 'Folder is empty' : 'Nothing here yet'}
-          </h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            {search ? 'Try a different search term' : 'Use "New Folder" or "Upload" to add content'}
-          </p>
-          {!search && (
-            <Button onClick={() => setShowUpload(true)} className="mt-5" size="sm">
-              <Plus />
-              Upload document
-            </Button>
+    <div className="flex flex-col h-full">
+      {/* Top toolbar */}
+      <div className="flex-shrink-0 border-b bg-background px-6 py-3 flex items-center gap-3">
+        <div className="flex-1 min-w-0">
+          <h1 className="text-base font-semibold truncate">{workspace.name}</h1>
+          {workspace.description && (
+            <p className="text-xs text-muted-foreground truncate mt-0.5">{workspace.description}</p>
           )}
         </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-          {filteredFolders.map(folder => (
-            <FolderCard
-              key={folder.id}
-              folder={folder}
-              onOpen={() => openFolder(folder)}
-              onDelete={() => void handleDeleteFolder(folder)}
-              onRename={name => handleRenameFolder(folder, name)}
-            />
-          ))}
-          {filteredDocuments.map(doc => (
-            <DocumentCard
-              key={doc.id}
-              doc={doc}
-              onDelete={handleDelete}
-              onEdit={docId => navigate(`/editor/${docId}?back=${encodeURIComponent(location.pathname + location.search)}`)}
-              onPreview={docId => navigate(`/pdf/${docId}?back=${encodeURIComponent(location.pathname + location.search)}`)}
-              onMove={setMoveDoc}
-            />
-          ))}
+
+        <div className="relative hidden sm:block w-56">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          <Input
+            type="search"
+            placeholder="Search..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="pl-9 h-8"
+          />
         </div>
-      )}
+
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setShowMembers(true)}
+            className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
+          >
+            <Users className="w-4 h-4" />
+            <span className="hidden md:inline">
+              {workspace.members.length} member{workspace.members.length !== 1 ? 's' : ''}
+            </span>
+          </button>
+          <button
+            onClick={() => void fetchData()}
+            title="Refresh"
+            className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'h-8 w-8')}
+          >
+            <RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} />
+          </button>
+          <button
+            onClick={() => setShowCreateFolder(true)}
+            className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
+          >
+            <FolderPlus className="w-4 h-4" />
+            <span className="hidden md:inline">New Folder</span>
+          </button>
+          <button
+            onClick={() => setShowUpload(true)}
+            className={cn(buttonVariants({ size: 'sm' }))}
+          >
+            <Plus className="w-4 h-4" />
+            Upload
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile search */}
+      <div className="sm:hidden flex-shrink-0 px-6 py-2 bg-background border-b">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          <Input
+            type="search"
+            placeholder="Search..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+      </div>
+
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto px-6 py-4">
+        {activeFolder && (
+          <div className="flex items-center gap-1.5 text-sm mb-4 flex-wrap">
+            <button
+              onClick={closeFolder}
+              className="text-primary hover:underline underline-offset-4 font-medium transition-colors"
+            >
+              {workspace.name}
+            </button>
+            {folderBreadcrumb.map((f, i) => (
+              <span key={f.id} className="flex items-center gap-1.5">
+                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                {i < folderBreadcrumb.length - 1 ? (
+                  <button
+                    onClick={() => openFolder(f)}
+                    className="text-primary hover:underline underline-offset-4 font-medium transition-colors"
+                  >
+                    {f.name}
+                  </button>
+                ) : (
+                  <span className="font-medium">{f.name}</span>
+                )}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {isEmpty ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
+              <FileText className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-base font-semibold">
+              {search ? 'No matching items' : activeFolder ? 'Folder is empty' : 'Nothing here yet'}
+            </h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              {search ? 'Try a different search term' : 'Use "New Folder" or "Upload" to add content'}
+            </p>
+            {!search && (
+              <button
+                onClick={() => setShowUpload(true)}
+                className={cn(buttonVariants({ size: 'sm' }), 'mt-5')}
+              >
+                <Plus className="w-4 h-4" />
+                Upload document
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            {filteredFolders.map(folder => (
+              <FolderCard
+                key={folder.id}
+                folder={folder}
+                onOpen={() => openFolder(folder)}
+                onDelete={() => void handleDeleteFolder(folder)}
+                onRename={name => handleRenameFolder(folder, name)}
+              />
+            ))}
+            {filteredDocuments.map(doc => (
+              <DocumentCard
+                key={doc.id}
+                doc={doc}
+                onDelete={handleDelete}
+                onEdit={docId => navigate(`/editor/${docId}?back=${encodeURIComponent(location.pathname + location.search)}`)}
+                onPreview={docId => navigate(`/pdf/${docId}?back=${encodeURIComponent(location.pathname + location.search)}`)}
+                onMove={setMoveDoc}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
       {showCreateFolder && id && (
         <CreateFolderDialog
