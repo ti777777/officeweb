@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams, useLocation } from 'react-rout
 import toast from 'react-hot-toast'
 import {
   Check, ChevronRight, Folder as FolderIcon, FolderPlus,
-  MoreHorizontal, Pencil, Plus, RefreshCw, Search, Trash2, Users, FileText, X, UserMinus, Home,
+  MoreHorizontal, Pencil, Plus, RefreshCw, Search, Trash2, FileText, X, Home,
 } from 'lucide-react'
 import { workspacesApi } from '@/api/workspaces'
 import { documentsApi } from '@/api/documents'
@@ -11,12 +11,9 @@ import { foldersApi } from '@/api/folders'
 import type { Workspace, Document, Folder } from '@/types'
 import DocumentCard from '@/components/documents/DocumentCard'
 import UploadModal from '@/components/documents/UploadModal'
-import { useAuth } from '@/contexts/AuthContext'
 import { buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import {
   Dialog,
@@ -219,111 +216,6 @@ function CreateFolderDialog({ open, onClose, onCreated, workspaceId, parentFolde
   )
 }
 
-function MembersDialog({ workspace, currentUserId, open, onClose, onUpdated }: {
-  workspace: Workspace
-  currentUserId: string
-  open: boolean
-  onClose: () => void
-  onUpdated: () => void
-}) {
-  const [input, setInput] = useState('')
-  const [loading, setLoading] = useState(false)
-  const isOwner = workspace.members.some(m => m.userId === currentUserId && m.role === 'Owner')
-
-  const handleAdd = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!input.trim()) return
-    setLoading(true)
-    try {
-      await workspacesApi.addMember(workspace.id, input.trim())
-      toast.success('Member added')
-      setInput('')
-      onUpdated()
-    } catch {
-      toast.error('User not found or already a member')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleRemove = async (userId: string, username: string) => {
-    if (!confirm(`Remove ${username} from this workspace?`)) return
-    try {
-      await workspacesApi.removeMember(workspace.id, userId)
-      toast.success('Member removed')
-      onUpdated()
-    } catch {
-      toast.error('Failed to remove member')
-    }
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={(o: boolean) => { if (!o) onClose() }}>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle>Members</DialogTitle>
-        </DialogHeader>
-        <div className="px-6 pb-6 space-y-4">
-          <ul className="space-y-1">
-            {workspace.members.map(m => (
-              <li key={m.userId} className="flex items-center gap-3 py-2">
-                <Avatar className="h-7 w-7 shrink-0">
-                  <AvatarFallback className="text-[10px]">
-                    {m.username.slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium leading-none">{m.username}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{m.email}</p>
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <span className={cn(
-                    'text-xs px-2 py-0.5 rounded-full font-medium',
-                    m.role === 'Owner'
-                      ? 'bg-primary/10 text-primary'
-                      : 'bg-secondary text-secondary-foreground',
-                  )}>
-                    {m.role}
-                  </span>
-                  {((isOwner && m.userId !== currentUserId) || (m.userId === currentUserId && m.role !== 'Owner')) && (
-                    <button
-                      onClick={() => void handleRemove(m.userId, m.username)}
-                      className="p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                      title={m.userId === currentUserId ? 'Leave workspace' : 'Remove member'}
-                    >
-                      <UserMinus className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-          {isOwner && (
-            <>
-              <Separator />
-              <form onSubmit={e => void handleAdd(e)} className="flex gap-2">
-                <Input
-                  value={input}
-                  onChange={e => setInput(e.target.value)}
-                  placeholder="Username or email"
-                  className="flex-1"
-                />
-                <button
-                  type="submit"
-                  disabled={!input.trim() || loading}
-                  className={cn(buttonVariants({ size: 'sm' }))}
-                >
-                  Add
-                </button>
-              </form>
-            </>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
 function MoveDocumentDialog({ doc, folders, open, onClose, onMoved }: {
   doc: Document | null
   folders: Folder[]
@@ -416,14 +308,12 @@ export default function WorkspacePage() {
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { user } = useAuth()
   const [workspace, setWorkspace] = useState<Workspace | null>(null)
   const [documents, setDocuments] = useState<Document[]>([])
   const [folders, setFolders] = useState<Folder[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [showUpload, setShowUpload] = useState(false)
-  const [showMembers, setShowMembers] = useState(false)
   const [showCreateFolder, setShowCreateFolder] = useState(false)
   const [moveDoc, setMoveDoc] = useState<Document | null>(null)
 
@@ -579,15 +469,6 @@ export default function WorkspacePage() {
 
         <div className="flex items-center gap-1.5">
           <button
-            onClick={() => setShowMembers(true)}
-            className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
-          >
-            <Users className="w-4 h-4" />
-            <span className="hidden md:inline">
-              {workspace.members.length} member{workspace.members.length !== 1 ? 's' : ''}
-            </span>
-          </button>
-          <button
             onClick={() => void fetchData()}
             title="Refresh"
             className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'h-8 w-8')}
@@ -714,19 +595,6 @@ export default function WorkspacePage() {
           onClose={() => setShowUpload(false)}
           onUploaded={handleUploaded}
           uploadFn={uploadFn}
-        />
-      )}
-
-      {workspace && (
-        <MembersDialog
-          workspace={workspace}
-          currentUserId={user?.id ?? ''}
-          open={showMembers}
-          onClose={() => setShowMembers(false)}
-          onUpdated={() => {
-            setShowMembers(false)
-            void fetchData()
-          }}
         />
       )}
 

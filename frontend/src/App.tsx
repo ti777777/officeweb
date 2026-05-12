@@ -5,6 +5,7 @@ import Layout from './components/layout/Layout'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import HomePage from './pages/HomePage'
 import WorkspacePage from './pages/WorkspacePage'
+import SettingsPage from './pages/SettingsPage'
 import EditorPage from './pages/EditorPage'
 import PdfPreviewPage from './pages/PdfPreviewPage'
 import LoginPage from './pages/LoginPage'
@@ -22,6 +23,7 @@ export default function App() {
             <Route element={<Layout />}>
               <Route path="/" element={<HomePage />} />
               <Route path="/workspaces/:id" element={<WorkspacePage />} />
+              <Route path="/workspaces/:id/settings" element={<SettingsPage />} />
             </Route>
             <Route path="/editor/:id" element={<EditorPage />} />
             <Route path="/pdf/:id" element={<PdfPreviewPage />} />

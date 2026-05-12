@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { createPortal } from 'react-dom'
 import {
   FileText, ChevronDown, Plus, Check, LogOut,
-  Folder, Trash2, X, HardDrive,
+  Folder, Trash2, X, HardDrive, Settings,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../../contexts/AuthContext'
@@ -86,6 +86,7 @@ function CreateWorkspaceModal({ onClose, onCreated }: {
 
 export default function Sidebar() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { id: currentId } = useParams<{ id: string }>()
   const { user, logout } = useAuth()
   const { workspaces, loading, addWorkspace, removeWorkspace } = useWorkspaces()
@@ -189,13 +190,30 @@ export default function Sidebar() {
         {/* Navigation */}
         <nav className="flex-1 px-2 space-y-0.5 overflow-y-auto">
           {currentWorkspace && (
-            <button
-              onClick={() => navigate(`/workspaces/${currentWorkspace.id}`)}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-200/60 transition-colors"
-            >
-              <HardDrive className="w-4 h-4 text-gray-500" />
-              My Drive
-            </button>
+            <>
+              <button
+                onClick={() => navigate(`/workspaces/${currentWorkspace.id}`)}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                  location.pathname === `/workspaces/${currentWorkspace.id}`
+                    ? 'bg-gray-200/80 text-gray-900 font-medium'
+                    : 'text-gray-700 hover:bg-gray-200/60'
+                }`}
+              >
+                <HardDrive className="w-4 h-4 text-gray-500" />
+                My Drive
+              </button>
+              <button
+                onClick={() => navigate(`/workspaces/${currentWorkspace.id}/settings`)}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                  location.pathname === `/workspaces/${currentWorkspace.id}/settings`
+                    ? 'bg-gray-200/80 text-gray-900 font-medium'
+                    : 'text-gray-700 hover:bg-gray-200/60'
+                }`}
+              >
+                <Settings className="w-4 h-4 text-gray-500" />
+                Settings
+              </button>
+            </>
           )}
         </nav>
 
