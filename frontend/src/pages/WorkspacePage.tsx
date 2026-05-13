@@ -216,6 +216,24 @@ function CreateFolderDialog({ open, onClose, onCreated, workspaceId, parentFolde
   )
 }
 
+function flattenFolderTree(folders: Folder[]): Array<{ folder: Folder; depth: number }> {
+  const childrenMap = new Map<string | null, Folder[]>()
+  for (const folder of folders) {
+    const key = folder.parentFolderId ?? null
+    if (!childrenMap.has(key)) childrenMap.set(key, [])
+    childrenMap.get(key)!.push(folder)
+  }
+  const result: Array<{ folder: Folder; depth: number }> = []
+  function traverse(parentId: string | null, depth: number) {
+    for (const child of childrenMap.get(parentId) ?? []) {
+      result.push({ folder: child, depth })
+      traverse(child.id, depth + 1)
+    }
+  }
+  traverse(null, 0)
+  return result
+}
+
 function MoveDocumentDialog({ doc, folders, open, onClose, onMoved }: {
   doc: Document | null
   folders: Folder[]
@@ -245,6 +263,7 @@ function MoveDocumentDialog({ doc, folders, open, onClose, onMoved }: {
   }
 
   const unchanged = selectedFolderId === (doc?.folderId ?? null)
+  const folderTree = flattenFolderTree(folders)
 
   return (
     <Dialog open={open} onOpenChange={(o: boolean) => { if (!o && !moving) onClose() }}>
@@ -265,12 +284,13 @@ function MoveDocumentDialog({ doc, folders, open, onClose, onMoved }: {
             <Home className="w-4 h-4 shrink-0" />
             <span className="font-medium">Workspace root</span>
           </button>
-          {folders.map(folder => (
+          {folderTree.map(({ folder, depth }) => (
             <button
               key={folder.id}
               onClick={() => setSelectedFolderId(folder.id)}
+              style={{ paddingLeft: `${12 + depth * 20}px` }}
               className={cn(
-                'w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors',
+                'w-full flex items-center gap-3 pr-3 py-2.5 rounded-md text-sm transition-colors',
                 selectedFolderId === folder.id
                   ? 'bg-primary text-primary-foreground'
                   : 'hover:bg-accent text-foreground',
