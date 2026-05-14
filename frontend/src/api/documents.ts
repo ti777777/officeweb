@@ -33,4 +33,7 @@ export const documentsApi = {
 
   getWopiActionUrl: (ext: string) =>
     api.get<{ url: string }>('/api/editors/action', { params: { ext } }).then(r => r.data),
+
+  clone: (id: string) =>
+    api.post<Document>(`/api/documents/${id}/clone`).then(r => r.data),
 }

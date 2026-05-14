@@ -105,6 +105,35 @@ public class DocumentService(AppDbContext db, IConfiguration config) : IDocument
         return doc;
     }
 
+    public async Task<Document?> CloneAsync(Guid id)
+    {
+        var src = await db.Documents.FindAsync(id);
+        if (src is null || !File.Exists(src.StoragePath)) return null;
+
+        var newId = Guid.NewGuid();
+        var ext = Path.GetExtension(src.FileName);
+        var baseName = Path.GetFileNameWithoutExtension(src.FileName);
+        var newStoragePath = Path.Combine(_uploadPath, $"{newId}{ext}");
+
+        File.Copy(src.StoragePath, newStoragePath);
+
+        var clone = new Document
+        {
+            Id = newId,
+            FileName = $"Copy of {baseName}{ext}",
+            ContentType = src.ContentType,
+            Size = src.Size,
+            StoragePath = newStoragePath,
+            WorkspaceId = src.WorkspaceId,
+            OwnerId = src.OwnerId,
+            FolderId = src.FolderId,
+        };
+
+        db.Documents.Add(clone);
+        await db.SaveChangesAsync();
+        return clone;
+    }
+
     public async Task UpdateFileAsync(Guid id, Stream content)
     {
         var doc = await db.Documents.FindAsync(id);

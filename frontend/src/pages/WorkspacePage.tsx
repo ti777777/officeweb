@@ -591,9 +591,18 @@ export default function WorkspacePage() {
                 key={doc.id}
                 doc={doc}
                 onDelete={handleDelete}
-                onEdit={docId => navigate(`/editor/${docId}?back=${encodeURIComponent(location.pathname + location.search)}`)}
+                onEdit={docId => window.open(`/editor/${docId}`, '_blank')}
                 onPreview={docId => navigate(`/pdf/${docId}?back=${encodeURIComponent(location.pathname + location.search)}`)}
                 onMove={setMoveDoc}
+                onClone={cloned => {
+                  setDocuments(prev => {
+                    const idx = prev.findIndex(d => d.id === doc.id)
+                    const next = [...prev]
+                    next.splice(idx + 1, 0, cloned)
+                    return next
+                  })
+                  toast.success(`Cloned as "${cloned.fileName}"`)
+                }}
               />
             ))}
           </div>

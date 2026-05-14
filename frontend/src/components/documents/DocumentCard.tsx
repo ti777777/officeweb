@@ -1,4 +1,4 @@
-import { FileText, FileSpreadsheet, Presentation, Download, Trash2, Edit2, Eye, FolderInput, MoreHorizontal } from 'lucide-react'
+import { FileText, FileSpreadsheet, Presentation, Download, Trash2, Edit2, Eye, FolderInput, MoreHorizontal, Copy } from 'lucide-react'
 import { useState } from 'react'
 import type { Document } from '@/types'
 import { cn } from '@/lib/utils'
@@ -18,6 +18,7 @@ interface Props {
   onEdit: (id: string) => void
   onPreview?: (id: string) => void
   onMove?: (doc: Document) => void
+  onClone?: (cloned: Document) => void
 }
 
 type FileKind = 'pdf' | 'sheet' | 'slide' | 'doc'
@@ -46,11 +47,23 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-export default function DocumentCard({ doc, onDelete, onEdit, onPreview, onMove }: Props) {
+export default function DocumentCard({ doc, onDelete, onEdit, onPreview, onMove, onClone }: Props) {
   const kind = getKind(doc.contentType)
   const { icon, accent } = kindMeta[kind]
   const isPdf = kind === 'pdf'
   const [downloading, setDownloading] = useState(false)
+  const [cloning, setCloning] = useState(false)
+
+  const handleClone = async () => {
+    if (cloning) return
+    setCloning(true)
+    try {
+      const cloned = await documentsApi.clone(doc.id)
+      onClone?.(cloned)
+    } finally {
+      setCloning(false)
+    }
+  }
 
   const handleDownload = async () => {
     if (downloading) return
@@ -116,6 +129,10 @@ export default function DocumentCard({ doc, onDelete, onEdit, onPreview, onMove 
                 Move to folder
               </DropdownMenuItem>
             )}
+            <DropdownMenuItem onClick={() => void handleClone()} disabled={cloning}>
+              <Copy className="w-4 h-4 mr-2" />
+              {cloning ? 'Cloning…' : 'Clone'}
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => onDelete(doc.id)}

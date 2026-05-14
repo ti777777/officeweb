@@ -54,6 +54,13 @@ public class DocumentsController(
         return doc is null ? NotFound() : Ok(doc);
     }
 
+    [HttpPost("{id:guid}/clone")]
+    public async Task<ActionResult<Document>> Clone(Guid id)
+    {
+        var clone = await docs.CloneAsync(id);
+        return clone is null ? NotFound() : CreatedAtAction(nameof(GetById), new { id = clone.Id }, clone);
+    }
+
     [HttpGet("{id:guid}/wopi-token")]
     public async Task<ActionResult<object>> GetWopiToken(Guid id)
     {
