@@ -169,6 +169,24 @@ public class WopiController(
         return Ok();
     }
 
+    // DELETE /wopi/files/{fileId}/lock  —  Force unlock (called on editor page close)
+    [HttpDelete("{fileId:guid}/lock")]
+    public async Task<IActionResult> ForceUnlock(Guid fileId, [FromQuery] string? access_token)
+    {
+        if (!ValidateToken(access_token, fileId, out _))
+            return Unauthorized();
+
+        var existing = await GetActiveLock(fileId);
+        if (existing is not null)
+        {
+            db.WopiLocks.Remove(existing);
+            await db.SaveChangesAsync();
+            logger.LogInformation("ForceUnlock: released lock for {FileId}", fileId);
+        }
+
+        return Ok();
+    }
+
     private async Task<WopiLock?> GetActiveLock(Guid fileId) =>
         await db.WopiLocks
             .Where(l => l.FileId == fileId && l.Expiry > DateTime.UtcNow)

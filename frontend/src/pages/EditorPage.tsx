@@ -23,6 +23,26 @@ export default function EditorPage() {
   const [wopiProps, setWopiProps] = useState<WopiEditorProps | null>(null)
 
   useEffect(() => {
+    if (!id || !wopiProps) return
+
+    const apiBase = import.meta.env.VITE_API_URL ?? ''
+    const url = `${apiBase}/wopi/files/${id}/lock?access_token=${encodeURIComponent(wopiProps.accessToken)}`
+
+    const doUnlock = () => {
+      fetch(url, { method: 'DELETE', keepalive: true }).catch(() => {})
+    }
+
+    // Handles browser tab/window close
+    window.addEventListener('pagehide', doUnlock)
+
+    return () => {
+      window.removeEventListener('pagehide', doUnlock)
+      // Also unlock on SPA navigation away from editor
+      doUnlock()
+    }
+  }, [id, wopiProps])
+
+  useEffect(() => {
     if (!id) return
 
     const init = async () => {
