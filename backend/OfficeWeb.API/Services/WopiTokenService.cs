@@ -13,7 +13,7 @@ public class WopiTokenService : IWopiTokenService
     {
         var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))
             .Replace("+", "-").Replace("/", "_").TrimEnd('=');
-        _tokens[token] = new TokenData(fileId, userId, DateTime.UtcNow.AddHours(2));
+        _tokens[token] = new TokenData(fileId, userId, DateTime.UtcNow.AddHours(24));
         CleanupExpired();
         return token;
     }

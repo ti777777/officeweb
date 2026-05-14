@@ -77,7 +77,7 @@ public class DocumentsController(
 
         var token = wopiTokens.GenerateToken(id);
         var baseUrl = config["Wopi:BaseUrl"] ?? $"{Request.Scheme}://{Request.Host}";
-        var ttlMs = (long)(DateTime.UtcNow.AddHours(2) - DateTime.UnixEpoch).TotalMilliseconds;
+        var ttlMs = (long)(DateTime.UtcNow.AddHours(24) - DateTime.UnixEpoch).TotalMilliseconds;
         var wopiSrc = $"{baseUrl}/wopi/files/{id}";
 
         return Ok(new
