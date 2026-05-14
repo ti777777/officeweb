@@ -15,4 +15,5 @@ public interface IDocumentService
     Task UpdateFileAsync(Guid id, Stream content);
     Task<Document?> MoveAsync(Guid id, Guid? folderId);
     Task<Document?> CloneAsync(Guid id);
+    Task<Document?> RenameAsync(Guid id, string newName);
 }

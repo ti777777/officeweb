@@ -410,6 +410,11 @@ export default function WorkspacePage() {
     }
   }
 
+  const handleRenameDocument = (renamed: Document) => {
+    setDocuments(prev => prev.map(d => d.id === renamed.id ? renamed : d))
+    toast.success('Renamed')
+  }
+
   const handleRenameFolder = async (folder: Folder, name: string) => {
     try {
       await foldersApi.rename(id!, folder.id, name)
@@ -594,6 +599,7 @@ export default function WorkspacePage() {
                 onEdit={docId => window.open(`/editor/${docId}`, '_blank')}
                 onPreview={docId => navigate(`/pdf/${docId}?back=${encodeURIComponent(location.pathname + location.search)}`)}
                 onMove={setMoveDoc}
+                onRename={handleRenameDocument}
                 onClone={cloned => {
                   setDocuments(prev => {
                     const idx = prev.findIndex(d => d.id === doc.id)

@@ -134,6 +134,16 @@ public class DocumentService(AppDbContext db, IConfiguration config) : IDocument
         return clone;
     }
 
+    public async Task<Document?> RenameAsync(Guid id, string newName)
+    {
+        var doc = await db.Documents.FindAsync(id);
+        if (doc is null) return null;
+        doc.FileName = newName;
+        doc.UpdatedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+        return doc;
+    }
+
     public async Task UpdateFileAsync(Guid id, Stream content)
     {
         var doc = await db.Documents.FindAsync(id);

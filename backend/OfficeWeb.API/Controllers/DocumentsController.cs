@@ -54,6 +54,14 @@ public class DocumentsController(
         return doc is null ? NotFound() : Ok(doc);
     }
 
+    [HttpPatch("{id:guid}/rename")]
+    public async Task<ActionResult<Document>> Rename(Guid id, [FromBody] RenameDocumentRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.FileName)) return BadRequest(new { error = "File name is required." });
+        var doc = await docs.RenameAsync(id, request.FileName.Trim());
+        return doc is null ? NotFound() : Ok(doc);
+    }
+
     [HttpPost("{id:guid}/clone")]
     public async Task<ActionResult<Document>> Clone(Guid id)
     {
@@ -85,3 +93,4 @@ public class DocumentsController(
 }
 
 public record MoveDocumentRequest(Guid? FolderId);
+public record RenameDocumentRequest(string FileName);

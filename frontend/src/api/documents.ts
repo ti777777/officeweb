@@ -36,4 +36,7 @@ export const documentsApi = {
 
   clone: (id: string) =>
     api.post<Document>(`/api/documents/${id}/clone`).then(r => r.data),
+
+  rename: (id: string, fileName: string) =>
+    api.patch<Document>(`/api/documents/${id}/rename`, { fileName }).then(r => r.data),
 }
