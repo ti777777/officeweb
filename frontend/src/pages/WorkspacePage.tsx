@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams, useLocation } from 'react-rout
 import toast from 'react-hot-toast'
 import {
   Check, ChevronRight, Folder as FolderIcon, FolderPlus,
-  MoreHorizontal, Pencil, Plus, RefreshCw, Search, Trash2, FileText, X, Home,
+  MoreHorizontal, Pencil, Plus, RefreshCw, Search, Trash2, FileText, X,
 } from 'lucide-react'
 import { workspacesApi } from '@/api/workspaces'
 import { documentsApi } from '@/api/documents'
@@ -11,6 +11,7 @@ import { foldersApi } from '@/api/folders'
 import type { Workspace, Document, Folder } from '@/types'
 import DocumentCard from '@/components/documents/DocumentCard'
 import UploadModal from '@/components/documents/UploadModal'
+import FolderPickerButton from '@/components/documents/FolderPickerButton'
 import { buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -216,24 +217,6 @@ function CreateFolderDialog({ open, onClose, onCreated, workspaceId, parentFolde
   )
 }
 
-function flattenFolderTree(folders: Folder[]): Array<{ folder: Folder; depth: number }> {
-  const childrenMap = new Map<string | null, Folder[]>()
-  for (const folder of folders) {
-    const key = folder.parentFolderId ?? null
-    if (!childrenMap.has(key)) childrenMap.set(key, [])
-    childrenMap.get(key)!.push(folder)
-  }
-  const result: Array<{ folder: Folder; depth: number }> = []
-  function traverse(parentId: string | null, depth: number) {
-    for (const child of childrenMap.get(parentId) ?? []) {
-      result.push({ folder: child, depth })
-      traverse(child.id, depth + 1)
-    }
-  }
-  traverse(null, 0)
-  return result
-}
-
 function MoveDocumentDialog({ doc, folders, open, onClose, onMoved }: {
   doc: Document | null
   folders: Folder[]
@@ -263,7 +246,6 @@ function MoveDocumentDialog({ doc, folders, open, onClose, onMoved }: {
   }
 
   const unchanged = selectedFolderId === (doc?.folderId ?? null)
-  const folderTree = flattenFolderTree(folders)
 
   return (
     <Dialog open={open} onOpenChange={(o: boolean) => { if (!o && !moving) onClose() }}>
@@ -271,35 +253,13 @@ function MoveDocumentDialog({ doc, folders, open, onClose, onMoved }: {
         <DialogHeader>
           <DialogTitle>Move to folder</DialogTitle>
         </DialogHeader>
-        <div className="px-6 py-4 space-y-1 max-h-72 overflow-y-auto">
-          <button
-            onClick={() => setSelectedFolderId(null)}
-            className={cn(
-              'w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors',
-              selectedFolderId === null
-                ? 'bg-primary text-primary-foreground'
-                : 'hover:bg-accent text-foreground',
-            )}
-          >
-            <Home className="w-4 h-4 shrink-0" />
-            <span className="font-medium">Workspace root</span>
-          </button>
-          {folderTree.map(({ folder, depth }) => (
-            <button
-              key={folder.id}
-              onClick={() => setSelectedFolderId(folder.id)}
-              style={{ paddingLeft: `${12 + depth * 20}px` }}
-              className={cn(
-                'w-full flex items-center gap-3 pr-3 py-2.5 rounded-md text-sm transition-colors',
-                selectedFolderId === folder.id
-                  ? 'bg-primary text-primary-foreground'
-                  : 'hover:bg-accent text-foreground',
-              )}
-            >
-              <FolderIcon className="w-4 h-4 shrink-0 text-amber-500" />
-              <span className="truncate">{folder.name}</span>
-            </button>
-          ))}
+        <div className="px-6 py-4">
+          <FolderPickerButton
+            folders={folders}
+            value={selectedFolderId}
+            onChange={setSelectedFolderId}
+            disabled={moving}
+          />
         </div>
         <DialogFooter>
           <button
@@ -600,6 +560,8 @@ export default function WorkspacePage() {
                 onPreview={docId => navigate(`/pdf/${docId}?back=${encodeURIComponent(location.pathname + location.search)}`)}
                 onMove={setMoveDoc}
                 onRename={handleRenameDocument}
+                folders={folders}
+                currentFolderId={activeFolder?.id ?? null}
                 onClone={cloned => {
                   setDocuments(prev => {
                     const idx = prev.findIndex(d => d.id === doc.id)

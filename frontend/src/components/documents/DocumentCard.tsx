@@ -1,6 +1,6 @@
 import { FileText, FileSpreadsheet, Presentation, Download, Trash2, Edit2, Eye, FolderInput, MoreHorizontal, Copy, Pencil, Check, X } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
-import type { Document } from '@/types'
+import type { Document, Folder } from '@/types'
 import { cn } from '@/lib/utils'
 import { documentsApi } from '@/api/documents'
 import {
@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import FolderPickerButton from './FolderPickerButton'
 
 interface Props {
   doc: Document
@@ -28,6 +29,8 @@ interface Props {
   onMove?: (doc: Document) => void
   onClone?: (cloned: Document) => void
   onRename?: (renamed: Document) => void
+  folders?: Folder[]
+  currentFolderId?: string | null
 }
 
 type FileKind = 'pdf' | 'sheet' | 'slide' | 'doc'
@@ -56,7 +59,7 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-export default function DocumentCard({ doc, onDelete, onEdit, onPreview, onMove, onClone, onRename }: Props) {
+export default function DocumentCard({ doc, onDelete, onEdit, onPreview, onMove, onClone, onRename, folders, currentFolderId }: Props) {
   const kind = getKind(doc.contentType)
   const { icon, accent } = kindMeta[kind]
   const isPdf = kind === 'pdf'
@@ -64,6 +67,7 @@ export default function DocumentCard({ doc, onDelete, onEdit, onPreview, onMove,
   const [cloning, setCloning] = useState(false)
   const [cloneModalOpen, setCloneModalOpen] = useState(false)
   const [cloneName, setCloneName] = useState('')
+  const [cloneTargetFolderId, setCloneTargetFolderId] = useState<string | null>(null)
   const [renaming, setRenaming] = useState(false)
   const [editName, setEditName] = useState(doc.fileName)
   const [saving, setSaving] = useState(false)
@@ -98,6 +102,7 @@ export default function DocumentCard({ doc, onDelete, onEdit, onPreview, onMove,
     const ext = doc.fileName.includes('.') ? doc.fileName.slice(doc.fileName.lastIndexOf('.')) : ''
     const base = ext ? doc.fileName.slice(0, doc.fileName.lastIndexOf('.')) : doc.fileName
     setCloneName(`Copy of ${base}${ext}`)
+    setCloneTargetFolderId(currentFolderId ?? null)
     setCloneModalOpen(true)
   }
 
@@ -107,7 +112,7 @@ export default function DocumentCard({ doc, onDelete, onEdit, onPreview, onMove,
     if (!trimmed) return
     setCloning(true)
     try {
-      const cloned = await documentsApi.clone(doc.id, trimmed)
+      const cloned = await documentsApi.clone(doc.id, trimmed, cloneTargetFolderId)
       setCloneModalOpen(false)
       onClone?.(cloned)
     } finally {
@@ -138,7 +143,7 @@ export default function DocumentCard({ doc, onDelete, onEdit, onPreview, onMove,
           <DialogHeader className='border-b-0'>
             <DialogTitle>Clone Document</DialogTitle>
           </DialogHeader>
-          <div className='px-6'>
+          <div className='px-6 space-y-4'>
             <Input
               value={cloneName}
               onChange={e => setCloneName(e.target.value)}
@@ -146,6 +151,17 @@ export default function DocumentCard({ doc, onDelete, onEdit, onPreview, onMove,
               placeholder="New file name"
               autoFocus
             />
+            {folders && folders.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-xs font-medium text-muted-foreground">Clone to folder</p>
+                <FolderPickerButton
+                  folders={folders}
+                  value={cloneTargetFolderId}
+                  onChange={setCloneTargetFolderId}
+                  disabled={cloning}
+                />
+              </div>
+            )}
           </div>
           <DialogFooter className='border-t-0'>
             <Button variant="outline" onClick={() => setCloneModalOpen(false)} disabled={cloning}>

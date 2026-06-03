@@ -34,8 +34,8 @@ export const documentsApi = {
   getWopiActionUrl: (ext: string) =>
     api.get<{ url: string }>('/api/editors/action', { params: { ext } }).then(r => r.data),
 
-  clone: (id: string, fileName?: string) =>
-    api.post<Document>(`/api/documents/${id}/clone`, { fileName: fileName ?? null }).then(r => r.data),
+  clone: (id: string, fileName?: string, folderId?: string | null) =>
+    api.post<Document>(`/api/documents/${id}/clone`, { fileName: fileName ?? null, folderId: folderId ?? null }).then(r => r.data),
 
   rename: (id: string, fileName: string) =>
     api.patch<Document>(`/api/documents/${id}/rename`, { fileName }).then(r => r.data),

@@ -105,7 +105,7 @@ public class DocumentService(AppDbContext db, IConfiguration config) : IDocument
         return doc;
     }
 
-    public async Task<Document?> CloneAsync(Guid id, string? customFileName = null)
+    public async Task<Document?> CloneAsync(Guid id, string? customFileName = null, Guid? targetFolderId = null)
     {
         var src = await db.Documents.FindAsync(id);
         if (src is null || !File.Exists(src.StoragePath)) return null;
@@ -130,7 +130,7 @@ public class DocumentService(AppDbContext db, IConfiguration config) : IDocument
             StoragePath = newStoragePath,
             WorkspaceId = src.WorkspaceId,
             OwnerId = src.OwnerId,
-            FolderId = src.FolderId,
+            FolderId = targetFolderId ?? src.FolderId,
         };
 
         db.Documents.Add(clone);
