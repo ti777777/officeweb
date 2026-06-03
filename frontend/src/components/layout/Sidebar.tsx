@@ -73,7 +73,7 @@ function CreateWorkspaceModal({ onClose, onCreated }: {
               Cancel
             </button>
             <button type="submit" disabled={!name.trim() || loading}
-              className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              className="px-4 py-2 rounded-lg text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
               {loading ? 'Creating...' : 'Create'}
             </button>
           </div>
