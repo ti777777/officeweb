@@ -10,7 +10,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 interface Props {
   doc: Document
@@ -32,10 +40,10 @@ function getKind(contentType: string): FileKind {
 }
 
 const kindMeta: Record<FileKind, { icon: React.ReactNode; accent: string; label: string }> = {
-  pdf:   { icon: <FileText className="w-5 h-5" />,         accent: 'text-red-500 bg-red-50',         label: 'PDF' },
-  sheet: { icon: <FileSpreadsheet className="w-5 h-5" />,  accent: 'text-emerald-600 bg-emerald-50', label: 'Spreadsheet' },
-  slide: { icon: <Presentation className="w-5 h-5" />,     accent: 'text-amber-600 bg-amber-50',     label: 'Presentation' },
-  doc:   { icon: <FileText className="w-5 h-5" />,         accent: 'text-primary bg-accent',         label: 'Document' },
+  pdf: { icon: <FileText className="w-5 h-5" />, accent: 'text-red-500 bg-red-50', label: 'PDF' },
+  sheet: { icon: <FileSpreadsheet className="w-5 h-5" />, accent: 'text-emerald-600 bg-emerald-50', label: 'Spreadsheet' },
+  slide: { icon: <Presentation className="w-5 h-5" />, accent: 'text-amber-600 bg-amber-50', label: 'Presentation' },
+  doc: { icon: <FileText className="w-5 h-5" />, accent: 'text-primary bg-accent', label: 'Document' },
 }
 
 function formatBytes(bytes: number) {
@@ -54,6 +62,8 @@ export default function DocumentCard({ doc, onDelete, onEdit, onPreview, onMove,
   const isPdf = kind === 'pdf'
   const [downloading, setDownloading] = useState(false)
   const [cloning, setCloning] = useState(false)
+  const [cloneModalOpen, setCloneModalOpen] = useState(false)
+  const [cloneName, setCloneName] = useState('')
   const [renaming, setRenaming] = useState(false)
   const [editName, setEditName] = useState(doc.fileName)
   const [saving, setSaving] = useState(false)
@@ -84,11 +94,21 @@ export default function DocumentCard({ doc, onDelete, onEdit, onPreview, onMove,
     setRenaming(false)
   }
 
-  const handleClone = async () => {
+  const openCloneModal = () => {
+    const ext = doc.fileName.includes('.') ? doc.fileName.slice(doc.fileName.lastIndexOf('.')) : ''
+    const base = ext ? doc.fileName.slice(0, doc.fileName.lastIndexOf('.')) : doc.fileName
+    setCloneName(`Copy of ${base}${ext}`)
+    setCloneModalOpen(true)
+  }
+
+  const handleCloneConfirm = async () => {
     if (cloning) return
+    const trimmed = cloneName.trim()
+    if (!trimmed) return
     setCloning(true)
     try {
-      const cloned = await documentsApi.clone(doc.id)
+      const cloned = await documentsApi.clone(doc.id, trimmed)
+      setCloneModalOpen(false)
       onClone?.(cloned)
     } finally {
       setCloning(false)
@@ -112,111 +132,137 @@ export default function DocumentCard({ doc, onDelete, onEdit, onPreview, onMove,
   }
 
   return (
-    <div className="group bg-card border rounded-lg p-4 flex flex-col gap-3 hover:border-primary/40 hover:shadow-sm transition-all duration-150">
-      <div className="flex items-start gap-3">
-        <div className={cn('w-9 h-9 rounded-md flex items-center justify-center shrink-0', accent)}>
-          {icon}
-        </div>
-        <div className="flex-1 min-w-0 pt-0.5">
-          {renaming ? (
-            <input
-              ref={inputRef}
-              value={editName}
-              onChange={e => setEditName(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter') void handleRenameSave()
-                if (e.key === 'Escape') handleRenameCancel()
-              }}
-              disabled={saving}
-              className="w-full text-sm font-medium bg-transparent border border-primary rounded px-1.5 py-0.5 focus:outline-none focus:ring-2 focus:ring-ring"
+    <>
+      <Dialog open={cloneModalOpen} onOpenChange={open => { if (!cloning) setCloneModalOpen(open) }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader className='border-b-0'>
+            <DialogTitle>Clone Document</DialogTitle>
+          </DialogHeader>
+          <div className='px-6'>
+            <Input
+              value={cloneName}
+              onChange={e => setCloneName(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') void handleCloneConfirm() }}
+              placeholder="New file name"
+              autoFocus
             />
+          </div>
+          <DialogFooter className='border-t-0'>
+            <Button variant="outline" onClick={() => setCloneModalOpen(false)} disabled={cloning}>
+              Cancel
+            </Button>
+            <Button onClick={() => void handleCloneConfirm()} disabled={cloning || !cloneName.trim()}>
+              {cloning ? 'Cloning…' : 'Clone'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <div className="group bg-card border rounded-lg p-4 flex flex-col gap-3 hover:border-primary/40 hover:shadow-sm transition-all duration-150">
+        <div className="flex items-start gap-3">
+          <div className={cn('w-9 h-9 rounded-md flex items-center justify-center shrink-0', accent)}>
+            {icon}
+          </div>
+          <div className="flex-1 min-w-0 pt-0.5">
+            {renaming ? (
+              <input
+                ref={inputRef}
+                value={editName}
+                onChange={e => setEditName(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') void handleRenameSave()
+                  if (e.key === 'Escape') handleRenameCancel()
+                }}
+                disabled={saving}
+                className="w-full text-sm font-medium bg-transparent border border-primary rounded px-1.5 py-0.5 focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            ) : (
+              <p className="text-sm font-medium truncate leading-snug" title={doc.fileName}>
+                {doc.fileName}
+              </p>
+            )}
+            {!renaming && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {formatBytes(doc.size)} · {formatDate(doc.updatedAt)}
+              </p>
+            )}
+          </div>
+
+          {renaming ? (
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                onClick={() => void handleRenameSave()}
+                disabled={saving || !editName.trim()}
+                className="p-1.5 rounded-md text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-40"
+                title="Save"
+              >
+                <Check className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={handleRenameCancel}
+                disabled={saving}
+                className="p-1.5 rounded-md text-muted-foreground hover:bg-muted transition-colors"
+                title="Cancel"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
           ) : (
-            <p className="text-sm font-medium truncate leading-snug" title={doc.fileName}>
-              {doc.fileName}
-            </p>
-          )}
-          {!renaming && (
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {formatBytes(doc.size)} · {formatDate(doc.updatedAt)}
-            </p>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <MoreHorizontal className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                {isPdf ? (
+                  <DropdownMenuItem onClick={() => onPreview?.(doc.id)}>
+                    <Eye className="w-4 h-4 mr-2" />
+                    Preview
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem onClick={() => onEdit(doc.id)}>
+                    <Edit2 className="w-4 h-4 mr-2" />
+                    Edit
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={() => void handleDownload()} disabled={downloading}>
+                  <Download className="w-4 h-4 mr-2" />
+                  {downloading ? 'Downloading…' : 'Download'}
+                </DropdownMenuItem>
+                {onMove && (
+                  <DropdownMenuItem onClick={() => onMove(doc)}>
+                    <FolderInput className="w-4 h-4 mr-2" />
+                    Move to folder
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={openCloneModal} disabled={cloning}>
+                  <Copy className="w-4 h-4 mr-2" />
+                  Clone
+                </DropdownMenuItem>
+                {onRename && (
+                  <DropdownMenuItem onClick={() => { setEditName(doc.fileName); setRenaming(true) }}>
+                    <Pencil className="w-4 h-4 mr-2" />
+                    Rename
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => onDelete(doc.id)}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
-
-        {renaming ? (
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              onClick={() => void handleRenameSave()}
-              disabled={saving || !editName.trim()}
-              className="p-1.5 rounded-md text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-40"
-              title="Save"
-            >
-              <Check className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={handleRenameCancel}
-              disabled={saving}
-              className="p-1.5 rounded-md text-muted-foreground hover:bg-muted transition-colors"
-              title="Cancel"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        ) : (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={e => e.stopPropagation()}
-              >
-                <MoreHorizontal className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              {isPdf ? (
-                <DropdownMenuItem onClick={() => onPreview?.(doc.id)}>
-                  <Eye className="w-4 h-4 mr-2" />
-                  Preview
-                </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem onClick={() => onEdit(doc.id)}>
-                  <Edit2 className="w-4 h-4 mr-2" />
-                  Edit
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem onClick={() => void handleDownload()} disabled={downloading}>
-                <Download className="w-4 h-4 mr-2" />
-                {downloading ? 'Downloading…' : 'Download'}
-              </DropdownMenuItem>
-              {onMove && (
-                <DropdownMenuItem onClick={() => onMove(doc)}>
-                  <FolderInput className="w-4 h-4 mr-2" />
-                  Move to folder
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem onClick={() => void handleClone()} disabled={cloning}>
-                <Copy className="w-4 h-4 mr-2" />
-                {cloning ? 'Cloning…' : 'Clone'}
-              </DropdownMenuItem>
-              {onRename && (
-                <DropdownMenuItem onClick={() => { setEditName(doc.fileName); setRenaming(true) }}>
-                  <Pencil className="w-4 h-4 mr-2" />
-                  Rename
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => onDelete(doc.id)}
-                className="text-destructive focus:text-destructive"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
       </div>
-    </div>
+    </>
   )
 }

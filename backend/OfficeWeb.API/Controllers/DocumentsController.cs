@@ -63,9 +63,9 @@ public class DocumentsController(
     }
 
     [HttpPost("{id:guid}/clone")]
-    public async Task<ActionResult<Document>> Clone(Guid id)
+    public async Task<ActionResult<Document>> Clone(Guid id, [FromBody] CloneDocumentRequest? request = null)
     {
-        var clone = await docs.CloneAsync(id);
+        var clone = await docs.CloneAsync(id, request?.FileName);
         return clone is null ? NotFound() : CreatedAtAction(nameof(GetById), new { id = clone.Id }, clone);
     }
 
@@ -94,3 +94,4 @@ public class DocumentsController(
 
 public record MoveDocumentRequest(Guid? FolderId);
 public record RenameDocumentRequest(string FileName);
+public record CloneDocumentRequest(string? FileName);

@@ -105,7 +105,7 @@ public class DocumentService(AppDbContext db, IConfiguration config) : IDocument
         return doc;
     }
 
-    public async Task<Document?> CloneAsync(Guid id)
+    public async Task<Document?> CloneAsync(Guid id, string? customFileName = null)
     {
         var src = await db.Documents.FindAsync(id);
         if (src is null || !File.Exists(src.StoragePath)) return null;
@@ -117,10 +117,14 @@ public class DocumentService(AppDbContext db, IConfiguration config) : IDocument
 
         File.Copy(src.StoragePath, newStoragePath);
 
+        var fileName = string.IsNullOrWhiteSpace(customFileName)
+            ? $"Copy of {baseName}{ext}"
+            : customFileName.Trim();
+
         var clone = new Document
         {
             Id = newId,
-            FileName = $"Copy of {baseName}{ext}",
+            FileName = fileName,
             ContentType = src.ContentType,
             Size = src.Size,
             StoragePath = newStoragePath,
